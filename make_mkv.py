@@ -77,9 +77,10 @@ class socket_server(threading.Thread):
                 for input_cmd in full_cmds:
                     args = input_cmd.split('|')
                     cmd = args.pop(0)
-                    t = threading.Thread(target=self._eval_cmd,name=str(datetime.datetime.now),args=(cmd,conn,args))
-                    t.daemon = True
-                    t.start()
+                    if cmd != '':
+                        t = threading.Thread(target=self._eval_cmd,name=str(datetime.datetime.now),args=(cmd,conn,args))
+                        t.daemon = True
+                        t.start()
                 full_cmds = []
     
     def _eval_cmd(self,cmd,conn,args=[]):
@@ -123,7 +124,7 @@ class socket_server(threading.Thread):
         return s.accept()
 
 
-class make_mkv:
+class make_mkv(object):
     TEMP_DIR = os.path.join('media','Derp','tmp')
     NEWLINE_CHAR = '\n'
     SELECTION_PROFILE = (
@@ -195,7 +196,7 @@ class make_mkv:
             os.mkdir(out_path)
         ripped_tracks = {'disc_id':  disc_id}
         for track_id in track_ids.split(','):
-            ripped_tracks[track_id] = 'Successfully' in subprocess.check_output([u'makemkvcon',u'--noscan',u'mkv',u'disc:%s'%disc_id,u'%s'%track_id,out_path])
+            ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([u'makemkvcon',u'--noscan',u'mkv',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
         return ripped_tracks
     
     @staticmethod
@@ -205,7 +206,7 @@ class make_mkv:
             'tracks':   {},
             'disc_id':  disc_id
         }
-        disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','disc:%d' % int(disc_id)])
+        disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','dev:%s' % disc_id])
         track_id = -1
         for line in disc_info.split(make_mkv.NEWLINE_CHAR):
             split_line = line.split(',')
@@ -253,7 +254,7 @@ class make_mkv:
             if line[:4] == 'DRV:' and '/dev/' in line:  #<  DRV to make sure it's drive output, /dev to make sure that there is a drive
                 _info = line.split(',')
                 _info[5] = _info[5].replace('"','') if _info[5] != '""' else None
-                drives[_info[0].replace('DRV:','')] = _info[5]  #<  [Drive Index] = Movie Name
+                drives[_info[-1].replace('"','')] = _info[5]  #<  [Drive Index] = Movie Name
         return  drives
     
     def get_disc_drives():

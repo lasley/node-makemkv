@@ -11,10 +11,11 @@ from PyQt4 import QtGui, QtCore
 from pprint import pprint
 
 class make_mkv_client(object):
+    ##  Main class
     HOST = '192.168.69.67'
     PORT = 8888
     RECV_CHUNKS = 1024 
-    OUT_PATH = '/media/Motherload/1-test_ripping/'
+    OUT_PATH = '/media/Motherload/7-ripp/'
     DISC_INFO_TABLE_COLS = {
         'Size'  :   "track_info['Disk Size']",
         'Length':   "track_info['Duration']",
@@ -24,10 +25,17 @@ class make_mkv_client(object):
         'Vid'   :   "track_info['cnts']['Video']",
     }
     SIZE_MULT = dict(KB=2**10, MB=2**20, GB=2**30)
+    DRIVE_NAME_MAPS = {
+        '/dev/sr0'  :   '1st',
+        '/dev/sr1'  :   '3rd',
+        '/dev/sr2'  :   '2nd',
+        '/dev/sr3'  :   '4th',
+        '/dev/sr4'  :   '5th',
+    }
     def __init__(self, proxy_host=None, proxy_port=8080):
-        self.app = QtGui.QApplication(sys.argv)
-        self.gui = make_mkv_client_gui()
-        self.gui.setStyleSheet('')
+        ##  Init
+        ##  @param  Str proxy_host  SOCKS proxy hsot
+        ##  @param  Int proxy_port  SOCKS proxy port
         self.locked = threading.Lock()
         self.scan_operations = 0
         if proxy_host:
@@ -46,12 +54,19 @@ class make_mkv_client(object):
         sys.exit(self.app.exec_())
         
     def __del__(self):
+        ##  Close Socket
         self.socket.close()
     
     def init_ui(self):
+        ##  Init The GUI
+        self.app = QtGui.QApplication(sys.argv)
+        icon = QtGui.QIcon('./mkv_icon_all.png')
+        self.gui = make_mkv_client_gui(icon=icon)
+        self.gui.setStyleSheet('')
         def click_all_buttons():
             for x in self.rip_button_map.values(): x.clicked.emit(True)
         layout = QtGui.QHBoxLayout()
+        self.systray = makemkv_systray(self.gui,icon)
         self.refresh_all_button = self.gui.button('Refresh Drives', self.thread_finish, self._scan_drives)
         self.refresh_all_button.setObjectName('btn_refresh_drives')
         self.gui.main_layout.addWidget(self.refresh_all_button)
@@ -59,54 +74,58 @@ class make_mkv_client(object):
         disc_layout.setObjectName('lout_all_discs')
         self.gui.main_layout.addLayout(disc_layout)
         self.gui.main_layout.addWidget(self.gui.button('Rip Selected', self.thread_finish, click_all_buttons))
-        #refresh_button.clicked.emit(True)
     
     def thread_finish(self, input_list):
+        ##  Generic Thread End-Point
+        #   @param  List    input_list  Thread output
         print 'Thread finished start'
         layout_els = (QtGui.QGridLayout, QtGui.QHBoxLayout,QtGui.QVBoxLayout)
         thread_func = input_list.pop(0)
-        #print input_list
-        #layout_map = {
-        #    'scan_thread'   :   'lout_all_discs',
-        #    'rip_thread'    :   'disc_info:%s' % input_list[1]  #drive ID
-        #}
         if thread_func.__name__ == 'scan_thread':
             layout = self.gui.main_layout.findChild(object,'lout_all_discs')
             make_mkv_client_gui.clear_layout(layout)
             add_el = thread_func(*input_list)
             layout.addLayout(add_el)
         elif thread_func.__name__ == 'disc_info_thread':
-            add_el = thread_func(*input_list)
-            #layout = self.gui.main_layout.findChild(object,'disc_info:%s'%input_list[0])
-            #make_mkv_client_gui.clear_layout(layout,0)
+            thread_func(*input_list)
         elif thread_func.__name__ == 'rip_thread':
-            return_vals = thread_func(*input_list)
-            layout = self.disc_info_map[return_vals['disc_id']].layout()
+            add_el = thread_func(*input_list)
+            disc_id = add_el[1]
+            add_el = add_el[0]
+            layout = self.disc_info_map[disc_id].layout()
             make_mkv_client_gui.clear_layout(layout,0)
-            layout.addWidget(QtGui.QLabel(repr(return_vals)))
+            layout.addWidget(add_el)
         else:
             add_el = thread_func(*input_list)
-            #layout = self.gui.main_layout
-            #if type(add_el) in layout_els:
-            #    layout.addLayout(add_el)
-            #else:
-            #    layout.addWidget(add_el)
-        return True
     
     def _reset_button_refresh(self):
-        self.refresh_all_button.setEnabled( self.scan_operations==0 ) 
+        ##  Reset the global refresh button if neccessita
+        #   Also throws tray_message to alert of disc operation completes
+        not_currently_scanning = self.scan_operations==0
+        self.refresh_all_button.setEnabled( not_currently_scanning )
+        if not_currently_scanning:
+            self.systray.tray_message('Operations Complete!','All Current Disc Operations Have Completed.')
     
     def _scan_drives(self):
+        ##  Wrapper function for scanning the drives
+        #   @return List    [Scan_thread_function, scan_server_command]
         self.scan_operations+=1
         self._reset_button_refresh()
         def scan_thread(drives):
+            ##  Once the command has completed, this manipulates the GUI
+            #   @param  Dict    drives  Drives [sys location (/dev/sr#)] => Movie Name
+            #   @return QtGui.QHBoxLayout   Layout of disc info w/ checks
             self.refresh_buttons = {}
             layout = QtGui.QHBoxLayout()
             for drive_id, movie in drives.iteritems():
+                try:
+                    drive_name = self.DRIVE_NAME_MAPS[drive_id]
+                except KeyError:
+                    drive_name = drive_id
                 self.refresh_buttons[drive_id] = self.gui.button('Disc Info', self.thread_finish, self._disc_info, drive_id)
                 self.refresh_buttons[drive_id].setObjectName('btn_disc_info:%s'%drive_id)
                 self.refresh_buttons[drive_id].clicked.emit(True)
-                self.disc_info_map[drive_id] = self.gui.group_box('%s:%s'%(drive_id,movie), [self.refresh_buttons[drive_id]])
+                self.disc_info_map[drive_id] = self.gui.group_box('%s:%s'%(drive_name,movie), [self.refresh_buttons[drive_id]])
                 self.disc_info_map[drive_id].setObjectName('disc_box:%s'%drive_id)
                 layout.addWidget(self.disc_info_map[drive_id])
             self.scan_operations-=1
@@ -116,25 +135,34 @@ class make_mkv_client(object):
         return [scan_thread,drives]
     
     def _rip(self,drive_id,rip_info):
+        ##  Wrapper function for ripping tracks
+        #   @param  Str     drive_id    Drive id (sys location /dev/sr#)
+        #   @param  Lambda  rip_info    Lamba function to get the checked boxes..ghetto, I know
+        #   @return List    [rip_thread_complete_function, rip_server_command, movie_name_override_text, drive_id]
         self.scan_operations+=1
         self._reset_button_refresh()
         self.refresh_buttons[drive_id].setEnabled(False)
-        def rip_thread(out_path, drive_id, ripped_tracks):
-            print 'Derp', out_path, drive_id, ripped_tracks, 'Derp'
+        def rip_thread(rip_information, drive_id, ripped_tracks):
+            ##  Ripping thread complete function
+            #   @todo document this
+            drive_id = rip_information['disc_id']
+            del rip_information['disc_id']
+            output = []
+            for track_id,bol_success in rip_information.iteritems():
+                output.append('Track %s: %s' % (track_id, repr(bol_success)))
             self.scan_operations-=1
             self.refresh_buttons[drive_id].setEnabled(True)
             self._reset_button_refresh()
-            return QtGui.QLabel('Ripped Drive ID: %s Tracks: %s To: %s' % (drive_id, repr(ripped_tracks), out_path))
+            return [QtGui.QLabel('Drive ID: %s\n%s' % (drive_id, '\n'.join(output))), drive_id]
         layout = self.disc_info_map[drive_id].layout()
-        make_mkv_client_gui.clear_layout(layout,0)
-        print rip_info()
+        make_mkv_client_gui.clear_layout(layout,0,True)
+        layout.addWidget(QtGui.QLabel('Ripping...'))
         return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (rip_info()[0], drive_id, ','.join(rip_info()[1]))), rip_info()[0],drive_id]    
     
     def _disc_info(self,drive_id):
-        ##  Get disc info from remote server, return or add to q
+        ##  Wrapper function for getting disc info
         #   @param  Int         drive_id    Drive ID to get
-        #   @param  Queue.Queue q           Queue if threading
-        #   @return Bool/Dict   Bool if q, else dict
+        #   @todo   Document this
         self.scan_operations+=1
         self._reset_button_refresh()
         self.refresh_buttons[drive_id].setEnabled(False)
@@ -149,15 +177,16 @@ class make_mkv_client(object):
             def _lambda_loop(drive_id,checks):
                 return lambda: loop_checks(drive_id,checks)
             drive_id = disc_info['disc_id']
-            self.disc_info_map[drive_id].setTitle(disc_info['disc']['Name'])
+            try:
+                drive_name = self.DRIVE_NAME_MAPS[drive_id]
+            except KeyError:
+                drive_name = drive_id
+            self.disc_info_map[drive_id].setTitle(u'%s:%s' % (drive_name, disc_info['disc']['Name']))
             layout = self.disc_info_map[drive_id].layout()
             make_mkv_client_gui.clear_layout(layout,0)
             check_map = {}
             self.disc_name_map[drive_id] = QtGui.QLineEdit(disc_info['disc']['Name'])
             layout.addWidget(self.disc_name_map[drive_id])
-            #disc_info_table = QtGui.QTableWidget(len(disc_info['tracks']),len(self.DISC_INFO_TABLE_COLS))
-            #disc_info_table.setHorizontalHeaderLabels(['']+self.DISC_INFO_TABLE_COLS.keys())
-            #layout.addWidget(disc_info_table)
             row_num = 0
             sort_lines = []
             for track_id, track_info in disc_info['tracks'].iteritems():
@@ -166,21 +195,13 @@ class make_mkv_client(object):
             for sorted_track in reversed(sort_lines):
                 track_id = sorted_track.rsplit(':',1)[0]
                 track_info = disc_info['tracks'][track_id]
-            #for track_id, track_info in disc_info['tracks'].iteritems():
                 try:
                     ch_cnt = track_info['Chapter Count']
-                    #check_map[track_id] = QtGui.QTableWidgetItem()
-                    #check_map[track_id].setCheckState(QtCore.Qt.Unchecked)
-                    #disc_info_table.setItem(row_num,0,check_map[track_id])
-                    #for col_num, col_var in enumerate(self.DISC_INFO_TABLE_COLS.values()):
-                    #    col = QtGui.QTableWidgetItem(eval(col_var))
-                    #    disc_info_table.setItem(row_num,col_num+1,col)
                     check_map[track_id] = QtGui.QCheckBox('Track ID:%s\n\tCnts: %s\n\tSize: %s\tChapter Cnt: %s\tDuration:%s' % (track_id, track_info['cnts'], track_info['Disk Size'], ch_cnt, track_info['Duration']))
                     check_map[track_id].setObjectName = '%s:%s' % (drive_id, track_id)
                     layout.addWidget(check_map[track_id])
                 except KeyError:
                     pass    #<  ignore ? chapters
-                    #ch_cnt = '?'
             self.rip_button_map[drive_id] = self.gui.button('Rip', self.thread_finish, self._rip, drive_id, _lambda_loop(drive_id,check_map))
             layout.addWidget(self.rip_button_map[drive_id])
             self.scan_operations-=1
@@ -191,19 +212,17 @@ class make_mkv_client(object):
         return [disc_info_thread, self, drive_id, disc_info]
     
     @staticmethod
-    def get_size(line):
-        ##  Sort by size method
-        fn, size = line.rsplit(':',1)
+    def get_size(size_str):
+        ##  Sort by size
+        fn, size = size_str.rsplit(':',1)
         value, unit = size.split(' ')
         multiplier = make_mkv_client.SIZE_MULT[unit]
         return float(value)*multiplier
     
-    #SOCKET_ARGS = {
-    #            "rip"       :   'make_mkv.rip_track(out_path,disc_id,track_id,overwrite=False)',
-    #            "disc_info" :   'make_mkv.disc_info(disc_id)',
-    #            "scan_drives":  'make_mkv.scan_drives()'
-    #        }
     def _send_cmd(self,cmd):
+        ##  Send command to remote server, wait for reply
+        #   @param  Str cmd Command to send
+        #   @return Obj JSON decoded server reply
         try:
             self.socket.send( bytearray(cmd + u'[>#!>]', 'utf-8') )
             print 'Sent "%s"' % cmd
@@ -213,6 +232,8 @@ class make_mkv_client(object):
             raise Exception('Host Went Away!')
         
     def _socket_recv(self):
+        ##  Listen to conn for data
+        #   @return Str Rcvd data
         data_chunk, recvd_data = '',[self.socket_buffer]
         self.socket_buffer = ''
         self.locked.acquire()
@@ -232,19 +253,15 @@ class make_mkv_client(object):
         #print 'PROCESSED: "%s"' % ''.join(out_list)
         self.locked.release()
         return ''.join(recvd_data)
-    
-    def _close_server(self):
-        self._send_cmd('DIE BITCH!')
-    
-    def _center_window(self):
-        qr = self.frameGeometry()
-        cp = QtGui.QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
         
 class worker_thread(QtCore.QThread):
+    ##  Generic worker thread
     finished = QtCore.pyqtSignal(list)
     def __init__(self, function, *args, **kwargs):
+        ##  Init
+        #   @param  Function    function    Function to run on start
+        #   @param  List        *args       args to pass to function
+        #   @param  *Dict       **kwargs    Kerword args to pass to function
         super(worker_thread, self).__init__()
         #self.finished.connect(fin_function)
         self.function = function
@@ -252,22 +269,26 @@ class worker_thread(QtCore.QThread):
         self.kwargs = kwargs
    
     def __del__(self):
+        ##  No exception
         self.wait()
    
     def run(self):
+        ##  Thread finished, run function with args
         ret = self.function(*self.args,**self.kwargs)
         self.finished.emit(ret)
-        return
-
-#   Main Gui      
+  
 class make_mkv_client_gui(QtGui.QWidget):
-    def __init__(self, x=100, y=100, w=800, h=800, center=True):
+    ##  Gui related functions
+    def __init__(self, x=100, y=100, w=800, h=800, center=True, icon=False):
+        ##  Init
+        ##  @todo   Document
         super(make_mkv_client_gui, self).__init__()
         self.setGeometry(x,y,w,h)
         self.setWindowTitle('Remote MakeMKV Client')
         self.threads = []
         #icon = QtGui.QIcon(os.path.join('c:/','xampp','htdocs','ITL_HTML','trunk','shared_data','images','datait_logo.png'))
-        #self.setWindowIcon(icon)
+        if icon:
+            self.setWindowIcon(icon)
         self.main_layout = QtGui.QVBoxLayout()
         #self.systray = wins_systray(self,icon)
         #self.main_layout.addStretch(1)
@@ -277,6 +298,7 @@ class make_mkv_client_gui(QtGui.QWidget):
         self.show()
     
     def center(self):
+        ##  Center window on screen
         qr = self.frameGeometry()
         cp = QtGui.QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
@@ -284,6 +306,11 @@ class make_mkv_client_gui(QtGui.QWidget):
     
     @staticmethod
     def group_box(title, add_widgets=[], layout_type='v'):
+        ##  Returns a groupbox
+        #   @param  Str     title       Title text
+        #   @param  List    add_widgets Init with these widgets
+        #   @param  Str     layout_type h or v
+        #   @return  QtGui.QGroupBox
         layout_types = {
             'h' :   QtGui.QHBoxLayout,
             'v' :   QtGui.QVBoxLayout,
@@ -298,58 +325,60 @@ class make_mkv_client_gui(QtGui.QWidget):
         return box
     
     def button(self, txt, ret_function, function, *args, **kwargs):
+        #   Create a button, thread it
+        #   @param  Str         txt             Button Text
+        #   @param  Function    ret_function    Thread complete function
+        #   @param  Function    function        Thread start function
+        #   @param  List        *args           Args to pass to function
+        #   @param  Dict        **kwargs        KW Args to pass to function
+        #   @return QtGui.QPushButton
         button = QtGui.QPushButton(txt)
         self.threads.append(worker_thread(function, *args, **kwargs))
-        #self.threads[-1].setObjectName(txt)
-        #button.thread = self.threads[-1]
         button.clicked.connect( self.threads[-1].start )
-        #QtCore.QObject.connect(self.threads[-1],QtCore.SIGNAL('finished()'), retstart)
         self.threads[-1].finished.connect(ret_function)
-        #
-        #obj_container = QtCore.QObject()
-        #self.threads.append(QtCore.QThread())
-        #self.threads[-1].setObjectName(txt)
-        #obj_container.connect(button,QtCore.SIGNAL('clicked()'), self.threads[-1].start)
-        #self.threads[-1].started.connect(handler)
-        #obj_container.moveToThread(self.threads[-1])
-        #print 'App Thread:%s\nThread:%s' % ( self.thread().objectName(), obj_container.thread().objectName() )
         return button
     
     @staticmethod
-    def clear_layout(layout, preserve_el=None):
+    def clear_layout(layout, preserve_el=None, disable=False):
         ##  Clear a layout recursively
         #   @param  QLayout layout      Layout
         #   @param  Int     preserve_el Element index to preserve
+        #   @param  Bool    disable     Disable instead of remove?
         for i in reversed(range(layout.count())):
             if i != preserve_el:
                 item = layout.itemAt(i)
                 if isinstance(item, QtGui.QWidgetItem):
-                    item.widget().close()
-                    # or
-                    # item.widget().setParent(None)
+                    if disable:
+                        item.widget().setEnabled(False)
+                    else:
+                        item.widget().close()
                 elif isinstance(item, QtGui.QSpacerItem):
-                    # meh
                     pass
                 else:
-                    make_mkv_client_gui.clear_layout(item.layout())
-                layout.removeItem(item) 
+                    make_mkv_client_gui.clear_layout(item.layout(), disable=disable)
+                if not disable:
+                    layout.removeItem(item) 
+
+class makemkv_systray(QtGui.QSystemTrayIcon):
+    ##  Systray Class
+    def __init__(self, parent, icon, _show=True):
+        ##  Init
+        #   @param  QtGui.QWidget   parent  Parent obj
+        #   @param  QtGui.QIcon     icon    Icon
+        super(makemkv_systray, self).__init__(icon, parent)
+        #QtGui.QSystemTrayIcon.__init__(self, icon, parent)
+        menu = QtGui.QMenu(parent)
+        exitAction = menu.addAction("Exit")
+        self.setContextMenu(menu)
+        if _show:
+            self.show()
+    def tray_message(self,title,message):
+        ##  Show a tray icon message
+        #   @param  Str title   Title of message
+        #   @param  Str message Message Str 
+        self.showMessage(title,message) 
     
-    @staticmethod
-    def format_seconds(seconds,date_format='%h:%i'):
-        mins = math.floor(seconds/60)
-        hours = math.floor(mins/60)
-        seconds -= mins * 60
-        mins -= hours*60
-        format_dict = {
-            '%h'    :   hours,
-            '%i'    :   mins,
-            '%s'    :   seconds,
-        }
-        for key,item in format_dict.iteritems():
-            date_format = date_format.replace(key,'%02d'%item)
-        return date_format
-    
-    
+##  Do it now!
 if __name__ == '__main__':
     make_mkv_client('localhost')
     
