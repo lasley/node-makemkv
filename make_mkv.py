@@ -1,4 +1,12 @@
 #!/usr/env/python
+##   Socket server for makemkvcon
+#         
+#    makemkvcon server
+#    
+#    @author     David Lasley, dave -at- dlasley -dot- net
+#    @package    remote-makemkv
+#    @version    $Id$
+
 import os
 import subprocess
 import threading

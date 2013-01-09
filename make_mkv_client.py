@@ -1,5 +1,11 @@
 #!/usr/env/python
-
+##   Client for make_mkv.py
+#         
+#    GUI
+#    
+#    @author     David Lasley, dave -at- dlasley -dot- net
+#    @package    remote-makemkv
+#    @version    $Id$
 import socket
 import socks
 import time

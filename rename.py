@@ -1,15 +1,14 @@
 #!/opt/python2.7/bin/python
-'''
-    Video Renaming
-         
-    Video renaming class
-    
-    @requires   python-levenshtein
-    
-    @author     David Lasley, dave -at- dlasley -dot- net
-    @package    video_manipulation
-    @version    $Id$
-'''
+##    Video Renaming
+#         
+#    Video renaming class
+#    
+#    @requires   python-levenshtein
+#    
+#    @author     David Lasley, dave -at- dlasley -dot- net
+#    @package    video_manipulation
+#    @version    $Id$
+
 import re
 import os
 #import freebase
