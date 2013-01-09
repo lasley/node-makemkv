@@ -208,8 +208,9 @@ class make_mkv(object):
         }
         disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','dev:%s' % disc_id])
         track_id = -1
+        col_pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
         for line in disc_info.split(make_mkv.NEWLINE_CHAR):
-            split_line = line.split(',')
+            split_line = col_pattern.split(line)[1::2]
             if len(split_line) > 1 and split_line[0] != 'TCOUNT':
                 if line[0] == 'C':  #<  Disc Info
                     info_out['disc'][make_mkv.ATTRIBUTE_IDS[split_line[0].split(':')[-1]]] = split_line[-1].replace('"','')

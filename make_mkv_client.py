@@ -7,6 +7,7 @@ import threading
 import json
 import sys
 import logging
+from rename import rename
 from PyQt4 import QtGui, QtCore
 from pprint import pprint
 
@@ -124,7 +125,7 @@ class make_mkv_client(object):
                     drive_name = drive_id
                 self.refresh_buttons[drive_id] = self.gui.button('Disc Info', self.thread_finish, self._disc_info, drive_id)
                 self.refresh_buttons[drive_id].setObjectName('btn_disc_info:%s'%drive_id)
-                self.refresh_buttons[drive_id].clicked.emit(True)
+                #self.refresh_buttons[drive_id].clicked.emit(True)
                 self.disc_info_map[drive_id] = self.gui.group_box('%s:%s'%(drive_name,movie), [self.refresh_buttons[drive_id]])
                 self.disc_info_map[drive_id].setObjectName('disc_box:%s'%drive_id)
                 layout.addWidget(self.disc_info_map[drive_id])
@@ -181,11 +182,17 @@ class make_mkv_client(object):
                 drive_name = self.DRIVE_NAME_MAPS[drive_id]
             except KeyError:
                 drive_name = drive_id
-            self.disc_info_map[drive_id].setTitle(u'%s:%s' % (drive_name, disc_info['disc']['Name']))
+            #self.disc_info_map[drive_id].setTitle(u'%s:%s' % (drive_name, disc_info['disc']['Name']))
             layout = self.disc_info_map[drive_id].layout()
             make_mkv_client_gui.clear_layout(layout,0)
             check_map = {}
-            self.disc_name_map[drive_id] = QtGui.QLineEdit(disc_info['disc']['Name'])
+            sanitized = {}
+            for i in ('Volume Name','Tree Info','Name'):
+                sanitize = rename.full_sanitize(disc_info['disc'][i])
+                for key,val in sanitize[1].iteritems():
+                    sanitized[key] = val
+                sanitized['sanitized'] = sanitize[0]
+            self.disc_name_map[drive_id] = QtGui.QLineEdit(rename.format_season(sanitized))
             layout.addWidget(self.disc_name_map[drive_id])
             row_num = 0
             sort_lines = []
