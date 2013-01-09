@@ -252,14 +252,14 @@ class rename:
         #   @param  Bool    include_disc_num    include disc in out
         season_output = []
         for typ in rename.dir_hierarchy:
-            if include_disc_num or typ != 'disc':
-                try:
-                    season_output.append('%s%s'%(typ[0].capitalize(),season_information[typ]))
-                except KeyError: pass
-            if len(season_output)>0: 
-                return '%s %s' % (season_information['sanitized'], ''.join(season_output))
-            else:
-                return season_information['sanitized']
+            #if include_disc_num or typ != 'disc':
+            try:
+                season_output.append('%s%s'%(typ[0].capitalize(),season_information[typ]))
+            except KeyError: pass
+        if len(season_output)>0: 
+            return '%s %s' % (season_information['sanitized'], ''.join(season_output))
+        else:
+            return season_information['sanitized']
     
     @staticmethod
     def sanitize_spaces(string_in):
