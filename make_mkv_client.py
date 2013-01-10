@@ -131,7 +131,7 @@ class make_mkv_client(object):
                     drive_name = drive_id
                 self.refresh_buttons[drive_id] = self.gui.button('Disc Info', self.thread_finish, self._disc_info, drive_id)
                 self.refresh_buttons[drive_id].setObjectName('btn_disc_info:%s'%drive_id)
-                #self.refresh_buttons[drive_id].clicked.emit(True)
+                self.refresh_buttons[drive_id].clicked.emit(True)
                 self.disc_info_map[drive_id] = self.gui.group_box('%s:%s'%(drive_name,movie), [self.refresh_buttons[drive_id]])
                 self.disc_info_map[drive_id].setObjectName('disc_box:%s'%drive_id)
                 layout.addWidget(self.disc_info_map[drive_id])
@@ -146,9 +146,6 @@ class make_mkv_client(object):
         #   @param  Str     drive_id    Drive id (sys location /dev/sr#)
         #   @param  Lambda  rip_info    Lamba function to get the checked boxes..ghetto, I know
         #   @return List    [rip_thread_complete_function, rip_server_command, movie_name_override_text, drive_id]
-        self.scan_operations+=1
-        self._reset_button_refresh()
-        self.refresh_buttons[drive_id].setEnabled(False)
         def rip_thread(rip_information, drive_id, ripped_tracks):
             ##  Ripping thread complete function
             #   @todo document this
@@ -161,10 +158,14 @@ class make_mkv_client(object):
             self.refresh_buttons[drive_id].setEnabled(True)
             self._reset_button_refresh()
             return [QtGui.QLabel('Drive ID: %s\n%s' % (drive_id, '\n'.join(output))), drive_id]
-        layout = self.disc_info_map[drive_id].layout()
-        make_mkv_client_gui.clear_layout(layout,0,True)
-        layout.addWidget(QtGui.QLabel('Ripping...'))
-        return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (rip_info()[0], drive_id, ','.join(rip_info()[1]))), rip_info()[0],drive_id]    
+        if len(rip_info()[1]) > 0:
+            self.scan_operations+=1
+            self._reset_button_refresh()
+            self.refresh_buttons[drive_id].setEnabled(False)
+            layout = self.disc_info_map[drive_id].layout()
+            make_mkv_client_gui.clear_layout(layout,0,True)
+            layout.addWidget(QtGui.QLabel('Ripping...'))
+            return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (rip_info()[0], drive_id, ','.join(rip_info()[1]))), rip_info()[0],drive_id]    
     
     def _disc_info(self,drive_id):
         ##  Wrapper function for getting disc info
@@ -393,5 +394,5 @@ class makemkv_systray(QtGui.QSystemTrayIcon):
     
 ##  Do it now!
 if __name__ == '__main__':
-    make_mkv_client('localhost')
+    make_mkv_client()
     
