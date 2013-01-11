@@ -58,6 +58,7 @@ class make_mkv_client(object):
         self.socket.settimeout(None)
         self.socket_buffer = ''
         self.disc_info_map, self.check_map, self.disc_name_map, self.rip_button_map = {}, {}, {}, {}
+        self.ui_map = {}
         self.init_ui()
         sys.exit(self.app.exec_())
         
@@ -75,13 +76,23 @@ class make_mkv_client(object):
             for x in self.rip_button_map.values(): x.clicked.emit(True)
         layout = QtGui.QHBoxLayout()
         self.systray = makemkv_systray(self.gui,icon)
-        self.refresh_all_button = self.gui.button('Refresh Drives', self.thread_finish, self._scan_drives)
+        self.output_dir = QtGui.QLineEdit(self.OUT_PATH)
+        qgrid = QtGui.QGridLayout()
+        out_label = QtGui.QLabel('Output Dir:')
+        out_label.setAlignment(QtCore.Qt.AlignRight)
+        qgrid.addWidget(out_label,1,0,1,1)
+        qgrid.addWidget(self.output_dir,1,1,1,3)
+        self.refresh_all_button = self.gui.button('Refresh Drive(s)', self.thread_finish, self._scan_drives)
         self.refresh_all_button.setObjectName('btn_refresh_drives')
-        self.gui.main_layout.addWidget(self.refresh_all_button)
+        self.ui_map['refresh_all'] = self.refresh_all_button
+        qgrid.addWidget(self.refresh_all_button,2,0,1,2)
+        self.ui_map['rip_all'] = self.gui.button('Rip Selected', self.thread_finish, click_all_buttons)
+        qgrid.addWidget(self.ui_map['rip_all'],2,2,1,2)
         disc_layout = QtGui.QHBoxLayout()
         disc_layout.setObjectName('lout_all_discs')
-        self.gui.main_layout.addLayout(disc_layout)
-        self.gui.main_layout.addWidget(self.gui.button('Rip Selected', self.thread_finish, click_all_buttons))
+        qgrid.addLayout(disc_layout,3,0,5,4)
+        self.ui_map['all_discs'] = disc_layout
+        self.gui.main_layout.addLayout(qgrid)
     
     def thread_finish(self, input_list):
         ##  Generic Thread End-Point
@@ -98,11 +109,11 @@ class make_mkv_client(object):
             thread_func(*input_list)
         elif thread_func.__name__ == 'rip_thread':
             add_el = thread_func(*input_list)
-            disc_id = add_el[1]
+            drive_id = add_el[1]
             add_el = add_el[0]
-            layout = self.disc_info_map[disc_id].layout()
-            make_mkv_client_gui.clear_layout(layout,0)
-            layout.addWidget(add_el)
+            layout = layout = self.ui_map[drive_id]['disc_layout']
+            #make_mkv_client_gui.clear_layout(layout,enable=True)
+            layout.addWidget(make_mkv_client_gui.group_box('Rip Output', [add_el]))
         else:
             add_el = thread_func(*input_list)
     
@@ -130,12 +141,17 @@ class make_mkv_client(object):
                     drive_name = self.DRIVE_NAME_MAPS[drive_id]
                 except KeyError:
                     drive_name = drive_id
-                self.refresh_buttons[drive_id] = self.gui.button('Disc Info', self.thread_finish, self._disc_info, drive_id)
-                self.refresh_buttons[drive_id].setObjectName('btn_disc_info:%s'%drive_id)
-                self.refresh_buttons[drive_id].clicked.emit(True)
-                self.disc_info_map[drive_id] = self.gui.group_box('%s:%s'%(drive_name,movie), [self.refresh_buttons[drive_id]])
-                self.disc_info_map[drive_id].setObjectName('disc_box:%s'%drive_id)
-                layout.addWidget(self.disc_info_map[drive_id])
+                self.ui_map[drive_id] = {}
+                self.ui_map[drive_id]['get_info'] = self.gui.button('Disc Info', self.thread_finish, self._disc_info, drive_id)
+                self.ui_map[drive_id]['get_info'].setObjectName('btn_disc_info:%s'%drive_id)
+                self.ui_map[drive_id]['disc_box'] = self.gui.group_box('%s - %s'%(drive_name,movie))
+                self.ui_map[drive_id]['disc_box'].setObjectName('disc_box:%s'%drive_id)
+                self.ui_map[drive_id]['disc_box'].setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+                self.ui_map[drive_id]['disc_layout'] = QtGui.QVBoxLayout()
+                self.ui_map[drive_id]['disc_box'].setLayout(self.ui_map[drive_id]['disc_layout'])
+                self.ui_map[drive_id]['disc_layout'].addWidget(self.ui_map[drive_id]['get_info'],1)
+                layout.addWidget(self.ui_map[drive_id]['disc_box'])
+                self.ui_map[drive_id]['get_info'].clicked.emit(True)
             self.scan_operations-=1
             self._reset_button_refresh()
             return layout
@@ -147,7 +163,7 @@ class make_mkv_client(object):
         #   @param  Str     drive_id    Drive id (sys location /dev/sr#)
         #   @param  Lambda  rip_info    Lamba function to get the checked boxes..ghetto, I know
         #   @return List    [rip_thread_complete_function, rip_server_command, movie_name_override_text, drive_id]
-        def rip_thread(rip_information, drive_id, ripped_tracks):
+        def rip_thread(rip_information):
             ##  Ripping thread complete function
             #   @todo document this
             drive_id = rip_information['disc_id']
@@ -156,17 +172,16 @@ class make_mkv_client(object):
             for track_id,bol_success in rip_information.iteritems():
                 output.append('Track %s: %s' % (track_id, repr(bol_success)))
             self.scan_operations-=1
-            self.refresh_buttons[drive_id].setEnabled(True)
+            self.ui_map[drive_id]['get_info'].setEnabled(True)
             self._reset_button_refresh()
             return [QtGui.QLabel('Drive ID: %s\n%s' % (drive_id, '\n'.join(output))), drive_id]
         if len(rip_info()[1]) > 0:
             self.scan_operations+=1
             self._reset_button_refresh()
-            self.refresh_buttons[drive_id].setEnabled(False)
-            layout = self.disc_info_map[drive_id].layout()
+            self.ui_map[drive_id]['get_info'].setEnabled(False)
+            layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,0,True)
-            layout.addWidget(QtGui.QLabel('Ripping...'))
-            return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (rip_info()[0], drive_id, ','.join(rip_info()[1]))), rip_info()[0],drive_id]    
+            return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (self.output_dir.text(), drive_id, ','.join(rip_info()[1]))), rip_info()[0]]    
     
     def _disc_info(self,drive_id):
         ##  Wrapper function for getting disc info
@@ -174,60 +189,101 @@ class make_mkv_client(object):
         #   @todo   Document this
         self.scan_operations+=1
         self._reset_button_refresh()
-        self.refresh_buttons[drive_id].setEnabled(False)
-        def disc_info_thread(self,drive_id,disc_info):
-            def loop_checks(drive_id, checks):
-                checked_tracks = []
-                for track_id,check_box in checks.iteritems():
-                    if check_box.checkState():
-                        checked_tracks.append(track_id)
-                    out_path = '%s%s' % (self.OUT_PATH, self.disc_name_map[drive_id].text())
-                return [out_path,checked_tracks]
-            def _lambda_loop(drive_id,checks):
-                return lambda: loop_checks(drive_id,checks)
+        self.ui_map[drive_id]['get_info'].setEnabled(False)
+        def disc_info_thread(self,disc_info):
+            self.scan_operations-=1
             drive_id = disc_info['disc_id']
+            self.ui_map[drive_id]['get_info'].setEnabled(True)
+            self._reset_button_refresh()
+            def loop_checks(drive_id):
+                checked_tracks = []
+                for track_id,check_box in self.ui_map[drive_id]['check_map'].iteritems():
+                    if check_box.checkState(0):
+                        checked_tracks.append(track_id)
+                    out_path = '%s%s' % (self.OUT_PATH, self.ui_map[drive_id]['new_name'].text())
+                return [out_path,checked_tracks]
+            def _lambda_loop(drive_id):
+                return lambda: loop_checks(drive_id)
             try:
                 drive_name = self.DRIVE_NAME_MAPS[drive_id]
             except KeyError:
                 drive_name = drive_id
             #self.disc_info_map[drive_id].setTitle(u'%s:%s' % (drive_name, disc_info['disc']['Name']))
-            layout = self.disc_info_map[drive_id].layout()
+            layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,0)
             check_map = {}
             sanitized = {}
-            for i in ('Volume Name','Tree Info','Name'):
-                try:
-                    sanitize = rename.full_sanitize(disc_info['disc'][i])
-                    for key,val in sanitize[1].iteritems():
-                        sanitized[key] = val
-                    sanitized['sanitized'] = sanitize[0]
-                except KeyError:    #<  name type didn't exist for some reason..
-                    pass
-            self.disc_name_map[drive_id] = QtGui.QLineEdit(rename.format_season(sanitized))
-            layout.addWidget(self.disc_name_map[drive_id])
-            row_num = 0
-            sort_lines = []
-            for track_id, track_info in disc_info['tracks'].iteritems():
-                sort_lines.append('%s:%s' % (track_id,track_info['Disk Size']))
-            sort_lines.sort(key=make_mkv_client.get_size) #<  Sort by size
-            for sorted_track in reversed(sort_lines):
-                track_id = sorted_track.rsplit(':',1)[0]
-                track_info = disc_info['tracks'][track_id]
-                try:
-                    ch_cnt = track_info['Chapter Count']
-                    check_map[track_id] = QtGui.QCheckBox('Track ID:%s\n\tCnts: %s\n\tSize: %s\tChapter Cnt: %s\tDuration:%s' % (track_id, track_info['cnts'], track_info['Disk Size'], ch_cnt, track_info['Duration']))
-                    check_map[track_id].setObjectName = '%s:%s' % (drive_id, track_id)
-                    layout.addWidget(check_map[track_id])
-                except KeyError:
-                    pass    #<  ignore ? chapters
-            self.rip_button_map[drive_id] = self.gui.button('Rip', self.thread_finish, self._rip, drive_id, _lambda_loop(drive_id,check_map))
-            layout.addWidget(self.rip_button_map[drive_id])
-            self.scan_operations-=1
-            self.refresh_buttons[drive_id].setEnabled(True)
-            self._reset_button_refresh()
+            if len(disc_info['tracks']) > 0:
+                for i in ('Volume Name','Tree Info','Name'):
+                    try:
+                        sanitize = rename.full_sanitize(disc_info['disc'][i])
+                        for key,val in sanitize[1].iteritems():
+                            sanitized[key] = val
+                        sanitized['sanitized'] = sanitize[0]
+                    except KeyError:    #<  name type didn't exist for some reason..
+                        pass
+                self.ui_map[drive_id]['new_name'] = QtGui.QLineEdit(rename.format_season(sanitized))
+                layout.addWidget(self.ui_map[drive_id]['new_name'])
+                self.ui_map[drive_id]['disc_info'] = QtGui.QTreeWidget()
+                self.ui_map[drive_id]['disc_info'].setColumnCount(2)
+                self.ui_map[drive_id]['disc_info'].setHeaderLabels(['Type','Value'])
+                #self.ui_map[drive_id]['disc_info'].setMinimumSize(320,500)
+                #self.ui_map[drive_id]['disc_info'].setMaximumSize(8000,8000)
+                self.ui_map[drive_id]['disc_info'].setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+                layout.addWidget(self.ui_map[drive_id]['disc_info'])
+                self.ui_map[drive_id]['rip_btn'] = self.gui.button('Rip', self.thread_finish, self._rip, drive_id, _lambda_loop(drive_id))
+                layout.addWidget(self.ui_map[drive_id]['rip_btn'])
+                self.rip_button_map[drive_id] = self.ui_map[drive_id]['rip_btn']
+                self.ui_map[drive_id]['check_map'] = {}
+                row_num = 0
+                sort_lines = []
+                for track_id, track_info in disc_info['tracks'].iteritems():
+                    sort_lines.append('%s:%s' % (track_id,track_info['Disk Size']))
+                sort_lines.sort(key=make_mkv_client.get_size) #<  Sort by size
+                for sorted_track in reversed(sort_lines):
+                    track_id = sorted_track.rsplit(':',1)[0]
+                    track_info = disc_info['tracks'][track_id]
+                    try:
+                        ch_cnt = track_info['Chapter Count']
+                        self.ui_map[drive_id]['check_map'][track_id] = QtGui.QTreeWidgetItem(self.ui_map[drive_id]['disc_info'])
+                        self.ui_map[drive_id]['check_map'][track_id].setText(0,'Track %s' % track_id)
+                        self.ui_map[drive_id]['check_map'][track_id].setExpanded(True)
+                        child = QtGui.QTreeWidgetItem(self.ui_map[drive_id]['check_map'][track_id])
+                        child.setText(0, 'Size')
+                        child.setText(1, track_info['Disk Size'])
+                        child = QtGui.QTreeWidgetItem(self.ui_map[drive_id]['check_map'][track_id])
+                        child.setText(0, 'Chptrs')
+                        child.setText(1, track_info['Chapter Count'])
+                        for typ,cnt in track_info['cnts'].iteritems():
+                            child = QtGui.QTreeWidgetItem(self.ui_map[drive_id]['check_map'][track_id])
+                            child.setText(0, typ)
+                            child.setText(1, str(cnt))
+                        #self.ui_map[drive_id]['check_map'][track_id].setText(1,'\r\n'.join(main_track_txt))
+                        self.ui_map[drive_id]['check_map'][track_id].setCheckState(0, QtCore.Qt.Unchecked )
+                        out_file = QtGui.QTreeWidgetItem(self.ui_map[drive_id]['check_map'][track_id])
+                        out_file.setText(0,'Out File')
+                        out_file.setText(1,track_info['Output Filename'])
+                        for key,val in track_info['track_parts'].iteritems():
+                            child = QtGui.QTreeWidgetItem(out_file)
+                            child.setText(0,key)
+                            if type(val) == dict:
+                                #child.setText(1,repr(val))
+                                for _key,_val in val.iteritems():
+                                    _child = QtGui.QTreeWidgetItem(child)
+                                    _child.setText(0,_key)
+                                    _child.setText(1,repr(_val))
+                            else:
+                                child.setText(1,repr(val))
+                        #check_map[track_id] = QtGui.QCheckBox('Track ID:%s\n\tCnts: %s\n\tSize: %s\tChapter Cnt: %s\tDuration:%s' % (track_id, track_info['cnts'], track_info['Disk Size'], ch_cnt, track_info['Duration']))
+                        #check_map[track_id].setObjectName = '%s:%s' % (drive_id, track_id)
+                        #layout.addWidget(check_map[track_id])
+                    except KeyError:
+                        pass    #<  ignore ? chapters
+                self.ui_map[drive_id]['disc_info'].resizeColumnToContents(0)
+                self.ui_map[drive_id]['disc_info'].resizeColumnToContents(1)
             return layout
         disc_info = self._send_cmd('disc_info|%s' % (drive_id))
-        return [disc_info_thread, self, drive_id, disc_info]
+        return [disc_info_thread, self, disc_info]
     
     @staticmethod
     def get_size(size_str):
@@ -300,7 +356,7 @@ class worker_thread(QtCore.QThread):
   
 class make_mkv_client_gui(QtGui.QWidget):
     ##  Gui related functions
-    def __init__(self, x=100, y=100, w=800, h=800, center=True, icon=False):
+    def __init__(self, x=100, y=100, w=1200, h=800, center=True, icon=False):
         ##  Init
         ##  @todo   Document
         super(make_mkv_client_gui, self).__init__()
@@ -360,7 +416,7 @@ class make_mkv_client_gui(QtGui.QWidget):
         return button
     
     @staticmethod
-    def clear_layout(layout, preserve_el=None, disable=False):
+    def clear_layout(layout, preserve_el=None, disable=False, enable=False):
         ##  Clear a layout recursively
         #   @param  QLayout layout      Layout
         #   @param  Int     preserve_el Element index to preserve
@@ -371,6 +427,8 @@ class make_mkv_client_gui(QtGui.QWidget):
                 if isinstance(item, QtGui.QWidgetItem):
                     if disable:
                         item.widget().setEnabled(False)
+                    elif enable:
+                        item.widget().setEnabled(True)
                     else:
                         item.widget().close()
                 elif isinstance(item, QtGui.QSpacerItem):
