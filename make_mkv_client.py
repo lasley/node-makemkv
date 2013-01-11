@@ -53,7 +53,6 @@ class make_mkv_client(object):
         try:
             self.socket.connect((self.HOST,self.PORT))
         except socket.error:
-
             raise Exception('%s:%s is down!' % (self.HOST,self.PORT))
         self.socket.settimeout(None)
         self.socket_buffer = ''
@@ -181,7 +180,7 @@ class make_mkv_client(object):
             self.ui_map[drive_id]['get_info'].setEnabled(False)
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,0,True)
-            return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (self.output_dir.text(), drive_id, ','.join(rip_info()[1]))), rip_info()[0]]    
+            return [rip_thread, self._send_cmd('rip|%s|%s|%s' % (rip_info()[0], drive_id, ','.join(rip_info()[1])))]    
     
     def _disc_info(self,drive_id):
         ##  Wrapper function for getting disc info
@@ -200,7 +199,7 @@ class make_mkv_client(object):
                 for track_id,check_box in self.ui_map[drive_id]['check_map'].iteritems():
                     if check_box.checkState(0):
                         checked_tracks.append(track_id)
-                    out_path = '%s%s' % (self.OUT_PATH, self.ui_map[drive_id]['new_name'].text())
+                    out_path = '%s/%s' % (self.output_dir.text(), self.ui_map[drive_id]['new_name'].text())
                 return [out_path,checked_tracks]
             def _lambda_loop(drive_id):
                 return lambda: loop_checks(drive_id)
@@ -352,6 +351,7 @@ class worker_thread(QtCore.QThread):
     def run(self):
         ##  Thread finished, run function with args
         ret = self.function(*self.args,**self.kwargs)
+        if ret is None: ret = []
         self.finished.emit(ret)
   
 class make_mkv_client_gui(QtGui.QWidget):
