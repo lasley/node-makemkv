@@ -21,7 +21,7 @@ class make_mkv_client(object):
     ##  Main class
     HOST = '192.168.69.67'
     PORT = 8888
-    RECV_CHUNKS = 1024 
+    RECV_CHUNKS = 4096 
     OUT_PATH = '/media/Motherload/7-ripp/'
     DISC_INFO_TABLE_COLS = {
         'Size'  :   "track_info['Disk Size']",
@@ -53,6 +53,7 @@ class make_mkv_client(object):
         try:
             self.socket.connect((self.HOST,self.PORT))
         except socket.error:
+
             raise Exception('%s:%s is down!' % (self.HOST,self.PORT))
         self.socket.settimeout(None)
         self.socket_buffer = ''
@@ -195,10 +196,13 @@ class make_mkv_client(object):
             check_map = {}
             sanitized = {}
             for i in ('Volume Name','Tree Info','Name'):
-                sanitize = rename.full_sanitize(disc_info['disc'][i])
-                for key,val in sanitize[1].iteritems():
-                    sanitized[key] = val
-                sanitized['sanitized'] = sanitize[0]
+                try:
+                    sanitize = rename.full_sanitize(disc_info['disc'][i])
+                    for key,val in sanitize[1].iteritems():
+                        sanitized[key] = val
+                    sanitized['sanitized'] = sanitize[0]
+                except KeyError:    #<  name type didn't exist for some reason..
+                    pass
             self.disc_name_map[drive_id] = QtGui.QLineEdit(rename.format_season(sanitized))
             layout.addWidget(self.disc_name_map[drive_id])
             row_num = 0
@@ -241,7 +245,10 @@ class make_mkv_client(object):
             self.socket.send( bytearray(cmd + u'[>#!>]', 'utf-8') )
             print 'Sent "%s"' % cmd
             data = self._socket_recv()
-            return json.loads(data)
+            try:
+                return json.loads(data)
+            except ValueError as e:
+                raise ValueError('%s Caused by data:\n\n%s' % (e,data))
         except socket.error:
             raise Exception('Host Went Away!')
         
@@ -252,9 +259,9 @@ class make_mkv_client(object):
         self.socket_buffer = ''
         self.locked.acquire()
         while 1:
-            #print 'Receiving Data...'
+            print 'Receiving Data...'
             data_chunk = self.socket.recv(self.RECV_CHUNKS)
-            #print 'PROCESSING: "%s"' % data_chunk
+            print 'PROCESSING: "%s"' % data_chunk
             if '[>#!>]' in data_chunk:
                 split_chunk = data_chunk.split('[>#!>]')
                 data_chunk = split_chunk[0]
@@ -394,5 +401,5 @@ class makemkv_systray(QtGui.QSystemTrayIcon):
     
 ##  Do it now!
 if __name__ == '__main__':
-    make_mkv_client()
+    make_mkv_client('localhost')
     

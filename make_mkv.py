@@ -22,7 +22,7 @@ if os.getuid() != 0:
 
 
 class socket_server(threading.Thread):
-    RECV_CHUNKS = 1024
+    RECV_CHUNKS = 4096
     def __init__(self, port, arg_list):
         super(socket_server, self).__init__()
         self.args = arg_list
@@ -121,6 +121,7 @@ class socket_server(threading.Thread):
                     #    total_sent += sent
                     #    loop_cnt += 1
                     conn.sendall(msg)
+                    #print msg
                     print 'Sent Data!'
                     #time.sleep(2)
             except IndexError:
