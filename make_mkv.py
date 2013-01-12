@@ -1,11 +1,14 @@
 #!/usr/env/python
-##   Socket server for makemkvcon
+##  Socket server for makemkvcon
 #         
-#    makemkvcon server
+#   makemkvcon server
 #    
-#    @author     David Lasley, dave -at- dlasley -dot- net
-#    @package    remote-makemkv
-#    @version    $Id$
+#   @author     David Lasley, dave -at- dlasley -dot- net
+#   @website    http://code.google.com/p/remote-makemkv/
+#   @package    remote-makemkv
+#   @version    $Id$
+#
+#   @requires-binary   makemkvcon, mkisofs
 
 import os
 import subprocess
@@ -15,6 +18,7 @@ import time
 import re
 import socket
 import json
+import shutil
 
 #   Detect root, error if not
 if os.getuid() != 0:
@@ -24,6 +28,9 @@ if os.getuid() != 0:
 class socket_server(threading.Thread):
     RECV_CHUNKS = 4096
     def __init__(self, port, arg_list):
+        ##  Init
+        #   @param  Int     port        Port to run on
+        #   @param  Dict    arg_list    Socket arg list
         super(socket_server, self).__init__()
         self.args = arg_list
         self.port = port
@@ -33,14 +40,17 @@ class socket_server(threading.Thread):
         self.lock = threading.Lock()
         
     def __del__(self):
+        ##  Kill active sockets
         for socket in self.sockets:
             socket.shutdown()
             socket.close()
             
     def now(self):
+        ##  Now
         return datetime.datetime.now().strftime("%d/%m/%y %H:%M:%S")
     
     def run(self):
+        ##  Main daemon
         host = ''
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM )
         s.bind((host, self.port))
@@ -92,16 +102,23 @@ class socket_server(threading.Thread):
                 full_cmds = []
     
     def _eval_cmd(self,cmd,conn,args=[]):
+        ##  Eval incoming commands against self.args, sends response to conn
+        #   @param  Str     cmd     Command to run
+        #   @param  Obj     conn    socket connection to send data on
+        #   @param  List    args    List of args for cmd
         try:
             if len(args)>0:
-                cmd_return = eval('%s("%s")' % (self.args[cmd], '","'.join(args)) )
+                cmd_return = eval('%s(self, "%s")' % (self.args[cmd], '","'.join(args)) )
             else:
-                cmd_return = eval('%s()' % (self.args[cmd]) )
+                cmd_return = eval('%s(self)' % (self.args[cmd]) )
             self._cmd_q('%s[>#!>]'%json.dumps(cmd_return),conn)
         except KeyError:
             self._cmd_q('%s[>#!>]'%json.dumps(cmd_return),conn)
     
     def _cmd_q(self,send_str,conn):
+        ##  Queue and send commands to conn
+        #   @param  Str send_str    Send this
+        #   @param  Obj conn        To this
         try:
             self.send_queue[conn].append(send_str)
         except KeyError:
@@ -129,6 +146,7 @@ class socket_server(threading.Thread):
                 self.lock.release()
               
     def _sock_listen(self,s):
+        ##  Socklisten
         s.listen(1)
         return s.accept()
 
@@ -184,23 +202,20 @@ class make_mkv(object):
         '35':   'Output Format Description',
         '36':   'MaxValue'
     }
+    COL_PATTERN = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
     def __init__(self, save_path=None):
         self.save_to = save_path
         SOCKET_ARGS = {
             "rip"       :   'make_mkv.rip_track',
             "disc_info" :   'make_mkv.disc_info',
-            "scan_drives":  'make_mkv.scan_drives'
+            "scan_drives":  'make_mkv.scan_drives',
+            'iso'       :   'make_mkv.to_iso',
         }
         _s = socket_server(8888,SOCKET_ARGS)
         _s.start()
     
     @staticmethod
-    def rip_track(out_path,disc_id,track_ids):
-        try:    #<  File exists
-            with(open(out_path)) as f:
-                raise EnvironmentError('Output file exists!')
-        except IOError:
-            pass
+    def rip_track(socket_parent, out_path,disc_id,track_ids):
         if not os.path.isdir(out_path):
             os.mkdir(out_path)
         ripped_tracks = {'disc_id':  disc_id}
@@ -209,7 +224,22 @@ class make_mkv(object):
         return ripped_tracks
     
     @staticmethod
-    def disc_info(disc_id,thread_id=None):
+    def to_iso(socket_parent, out_path,disc_id):
+        if not os.path.isdir(out_path):
+            os.mkdir(out_path)
+        rip_output = {
+            'disc_id':  disc_id,
+            'out_file': u'%s.iso'%out_path
+        }
+        decrypt_out = subprocess.check_output([u'makemkvcon', u'--noscan', u'backup' ,u'--decrypt', u'disc:%s'%socket_parent.drive_map[disc_id], out_path])   #< to folder, decrypt
+        print 'DECRYPT:\n'+decrypt_out+'\n\n'
+        iso_out = subprocess.check_output([u'mkisofs', u'-J', u'-r', u'-o', u'-iso-level', u'3', u'-udf', u'-allow-limited-size', rip_output['out_file'], out_path])  #<  Make iso
+        print 'ISO:\n'+iso_out+'\n\n'
+        shutil.rmtree(out_path) #<  RM disc tree
+        return rip_output   #< Exceptions from failures should cause this to not get hit on fail?
+    
+    @staticmethod
+    def disc_info(socket_parent, disc_id,thread_id=None):
         info_out = {
             'disc'  :   {},
             'tracks':   {},
@@ -217,9 +247,8 @@ class make_mkv(object):
         }
         disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','dev:%s' % disc_id])
         track_id = -1
-        col_pattern = re.compile(r'''((?:[^,"']|"[^"]*"|'[^']*')+)''')
         for line in disc_info.split(make_mkv.NEWLINE_CHAR):
-            split_line = col_pattern.split(line)[1::2]
+            split_line = make_mkv.COL_PATTERN.split(line)[1::2]
             if len(split_line) > 1 and split_line[0] != 'TCOUNT':
                 if line[0] == 'C':  #<  Disc Info
                     info_out['disc'][make_mkv.ATTRIBUTE_IDS[split_line[0].split(':')[-1]]] = split_line[-1].replace('"','')
@@ -252,19 +281,21 @@ class make_mkv(object):
         return info_out
     
     @staticmethod
-    def scan_drives():
+    def scan_drives(socket_parent):
         ##  Scan drives, return info
         #   @return Dict    Dict keyed by drive index, value is movie name
         drives = {}
+        socket_parent.drive_map = {}
         try:
             drive_scan = subprocess.check_output(['makemkvcon','-r','info'])
         except subprocess.CalledProcessError as e:
             drive_scan = e.output
         for line in drive_scan.split(make_mkv.NEWLINE_CHAR):
             if line[:4] == 'DRV:' and '/dev/' in line:  #<  DRV to make sure it's drive output, /dev to make sure that there is a drive
-                _info = line.split(',')
-                _info[5] = _info[5].replace('"','') if _info[5] != '""' else None
-                drives[_info[-1].replace('"','')] = _info[5]  #<  [Drive Index] = Movie Name
+                _info = make_mkv.COL_PATTERN.split(line)
+                drive_location = _info[-2].replace('"','')
+                drives[drive_location] = _info[-4].replace('"','') if _info[-4] != '""' else None#<  [Drive Index] = Movie Name
+                socket_parent.drive_map[drive_location] = _info[1].split(':')[1] #<    Index the drive location to makemkv's drive ID
         return  drives
     
     def get_disc_drives():
