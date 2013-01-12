@@ -459,5 +459,5 @@ class makemkv_systray(QtGui.QSystemTrayIcon):
     
 ##  Do it now!
 if __name__ == '__main__':
-    make_mkv_client('localhost')
+    make_mkv_client()
     
