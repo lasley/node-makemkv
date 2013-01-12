@@ -233,7 +233,7 @@ class make_mkv(object):
         }
         decrypt_out = subprocess.check_output([u'makemkvcon', u'--noscan', u'backup' ,u'--decrypt', u'disc:%s'%socket_parent.drive_map[disc_id], out_path])   #< to folder, decrypt
         print 'DECRYPT:\n'+decrypt_out+'\n\n'
-        iso_out = subprocess.check_output([u'mkisofs', u'-J', u'-r', u'-o', u'-iso-level', u'3', u'-udf', u'-allow-limited-size', rip_output['out_file'], out_path])  #<  Make iso
+        iso_out = subprocess.check_output([u'mkisofs', u'-J', u'-r',  u'-iso-level', u'3', u'-udf', u'-allow-limited-size', u'-o', rip_output['out_file'], out_path])  #<  Make iso
         print 'ISO:\n'+iso_out+'\n\n'
         shutil.rmtree(out_path) #<  RM disc tree
         return rip_output   #< Exceptions from failures should cause this to not get hit on fail?
