@@ -19,8 +19,8 @@ import sys
 import os
 dirname = os.path.dirname(__file__)
 sys.path.append(os.path.join(dirname, "../.."))
-from new_recv.shared.config_to_dict import config_to_dict
-import new_recv.shared.socket_functions as socket_functions
+from remote_makemkv.shared.config_to_dict import config_to_dict
+import remote_makemkv.shared.socket_functions as socket_functions
 
 #   Detect root, error if not
 if os.getuid() != 0:

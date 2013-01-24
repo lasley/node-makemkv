@@ -11,3 +11,7 @@ DRIVE_NAME_MAPS = {
         '/dev/sr4'  :   '5th',
     }   #<  Drive Identification on GUI
 OUTLIER_MODIFIER = 0.5  #<  If title size is below size_upper_quartile * OUTLIER_MODIFIER, it will be red and unchecked
+
+# Don't edit below here
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)

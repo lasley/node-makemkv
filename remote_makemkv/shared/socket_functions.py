@@ -9,7 +9,6 @@
 #   @requires-python-packages   pyqt4, socksipy-branch
 import select
 import socket
-import logging
 import socks
 import threading
 import datetime
@@ -18,8 +17,7 @@ import sys
 import os
 dirname = os.path.dirname(__file__)
 sys.path.append(os.path.join(dirname, "../.."))
-from new_recv import HOST,PORT,PROXY_HOST,PROXY_PORT
-logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+from remote_makemkv import HOST,PORT,PROXY_HOST,PROXY_PORT,logging
 
                 
 #   Base Class, probably not going to be directly referencing this..

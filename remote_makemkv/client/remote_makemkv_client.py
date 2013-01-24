@@ -17,9 +17,9 @@ import sys
 import os
 dirname = os.path.dirname(__file__)
 sys.path.append(os.path.join(dirname, "../.."))
-import new_recv.shared.socket_functions as socket_functions
-from new_recv.video_renaming.rename import rename
-from new_recv import OUT_PATH,DRIVE_NAME_MAPS,OUTLIER_MODIFIER
+import remote_makemkv.shared.socket_functions as socket_functions
+from remote_makemkv.video_renaming.rename import rename
+from remote_makemkv import OUT_PATH,DRIVE_NAME_MAPS,OUTLIER_MODIFIER,logging
 
 class make_mkv_client(object):
     ##  Main class
