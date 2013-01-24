@@ -10,26 +10,20 @@
 #   @version    $Id: make_mkv_client.py 47 2013-01-14 19:32:25Z dave@dlasley.net $
 #
 #   @requires-python-packages   pyqt4, socksipy-branch
-import sys
 from gui import *
 import math
-sys.path.append('../shared/')
-sys.path.append('../video-renaming/')
-import socket_functions
-from rename import rename
+
+import sys
+import os
+dirname = os.path.dirname(__file__)
+sys.path.append(os.path.join(dirname, "../.."))
+import new_recv.shared.socket_functions as socket_functions
+from new_recv.video_renaming.rename import rename
+from new_recv import OUT_PATH,DRIVE_NAME_MAPS,OUTLIER_MODIFIER
 
 class make_mkv_client(object):
     ##  Main class
-    OUT_PATH = '/media/Motherload/7-ripp/'
     SIZE_MULT = dict(KB=2**10, MB=2**20, GB=2**30)
-    DRIVE_NAME_MAPS = {
-        '/dev/sr0'  :   '1st',
-        '/dev/sr1'  :   '3rd',
-        '/dev/sr2'  :   '2nd',
-        '/dev/sr3'  :   '4th',
-        '/dev/sr4'  :   '5th',
-    }   #<  Drive Identification on GUI
-    OUTLIER_MODIFIER = 0.5  #<  If title size is below size_median * OUTLIER_MODIFIER, it will be red and unchecked
     def __init__(self, proxy_host=None, proxy_port=8080):
         ##  Init
         ##  @param  Str proxy_host  SOCKS proxy hsot
@@ -44,7 +38,7 @@ class make_mkv_client(object):
             "rip"           :   self.rip,
             "iso"           :   self.iso,
         }
-        self.socket = socket_functions.custom_client(SOCKET_ARGS, proxy_host, proxy_port)
+        self.socket = socket_functions.custom_client(SOCKET_ARGS)
         self.recv_thread = worker_thread(self.socket.recv)
         self.recv_thread.finished.connect(self.thread_finish)
         self.recv_thread.start()
@@ -62,7 +56,7 @@ class make_mkv_client(object):
             for x in self.rip_button_map.values(): x.clicked.emit(True)
         layout = QtGui.QHBoxLayout()
         self.systray = makemkv_systray(self.gui,icon)
-        self.output_dir = QtGui.QLineEdit(self.OUT_PATH)
+        self.output_dir = QtGui.QLineEdit(OUT_PATH)
         qgrid = QtGui.QGridLayout()
         out_label = QtGui.QLabel('Output Dir:')
         out_label.setAlignment(QtCore.Qt.AlignRight)
@@ -96,7 +90,7 @@ class make_mkv_client(object):
             layout = QtGui.QHBoxLayout()
             for drive_id, movie in thread_return['return'].iteritems():
                 try:
-                    drive_name = self.DRIVE_NAME_MAPS[drive_id]
+                    drive_name = DRIVE_NAME_MAPS[drive_id]
                 except KeyError:
                     drive_name = drive_id
                 self.ui_map[drive_id] = {}
@@ -144,13 +138,16 @@ class make_mkv_client(object):
                 return lambda: loop_checks(drive_id,modify_checks)
             #   Get Drive Name
             try:
-                drive_name = self.DRIVE_NAME_MAPS[drive_id]
+                drive_name = DRIVE_NAME_MAPS[drive_id]
             except KeyError:
                 drive_name = drive_id
                 
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,0)
-            self.ui_map[drive_id]['disc_box'].setTitle(u'%s:%s' % (drive_name, disc_info['disc']['Volume Name']))    #<  If it changed
+            try:
+                self.ui_map[drive_id]['disc_box'].setTitle(u'%s - %s' % (drive_name, disc_info['disc']['Volume Name']))    #<  If it changed
+            except KeyError:
+                self.ui_map[drive_id]['disc_box'].setTitle(u'%s - None' % (drive_name))    #<  No Disc
             check_map = {}
             sanitized = {}
             if len(disc_info['tracks']) > 0:
@@ -205,14 +202,16 @@ class make_mkv_client(object):
                 sort_lines.sort(key=make_mkv_client.get_size) #<  Sort by size
                 
                 #   Calculate outliers for coloring
-                ##  Median
                 sizes = sorted(sizes)
+                ##  Upper quartile
                 try:
-                    mid_num = (len(sizes)+1) / 2
-                    median = sizes[mid_num]
-                except TypeError:   #<  Even num
-                    median = (sizes[math.ceil(mid_num)] + sizes[math.floor(mid_num)]) / 2
-                low_num = median * self.OUTLIER_MODIFIER #<   If 50% lower than the median, probably not a good file...
+                    high_mid = ( len( sizes ) - 1 ) * 0.75
+                    uq = sizes[ high_mid ]
+                except TypeError:   #<  There were an even amount of values
+                    ceil = int( math.ceil( high_mid ) )
+                    floor = int( math.floor( high_mid ) )
+                    uq = ( sizes[ ceil ] + sizes[ floor ] ) / 2
+                low_num = uq * OUTLIER_MODIFIER #<   If OUTLIER_MODIFIER lower than the uq, probably not a good file...
                 
                 #   Fill the disc info Tree Widget
                 self.ui_map[drive_id]['check_map'] = {}

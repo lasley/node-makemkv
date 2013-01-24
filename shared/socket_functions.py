@@ -14,11 +14,13 @@ import socks
 import threading
 import datetime
 import json
-
-HOST = '192.168.69.104'
-PORT = 6001
-
+import sys
+import os
+dirname = os.path.dirname(__file__)
+sys.path.append(os.path.join(dirname, "../.."))
+from new_recv import HOST,PORT,PROXY_HOST,PROXY_PORT
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
+
                 
 #   Base Class, probably not going to be directly referencing this..
 class custom_socket(threading.Thread):
@@ -202,14 +204,14 @@ class custom_server(custom_socket):
         #        super(custom_server,self).send_str(self,client,send_str)   
 
 class custom_client(custom_socket):
-    def __init__(self, args={}, proxy_host=None, proxy_port=8080):
+    def __init__(self, args={}):
         ##  Init a socket as self.socket to host on port. Use proxy if needed
         #  
         #   @param  Str proxy_host  Proxy host
         #   @param  Int proxy_port Proxy port
         super(custom_client, self).__init__(args)
-        if proxy_host:
-            socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS4, proxy_host, proxy_port)
+        if PROXY_HOST:
+            socks.setdefaultproxy(socks.PROXY_TYPE_SOCKS4, PROXY_HOST, PROXY_PORT)
             socket.socket = socks.socksocket
         self.socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.connect()

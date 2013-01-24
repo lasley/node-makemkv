@@ -10,15 +10,17 @@
 #   @version    $Id: make_mkv.py 47 2013-01-14 19:32:25Z dave@dlasley.net $
 #
 #   @requires-binary   makemkvcon, mkisofs
-import os
 import subprocess
 import re
 import json
 import shutil
+
 import sys
-sys.path.append('/media/www/remote-makemkv/new_recv/shared/')
-from config_to_dict import config_to_dict
-import socket_functions
+import os
+dirname = os.path.dirname(__file__)
+sys.path.append(os.path.join(dirname, "../.."))
+from new_recv.shared.config_to_dict import config_to_dict
+import new_recv.shared.socket_functions as socket_functions
 
 #   Detect root, error if not
 if os.getuid() != 0:
