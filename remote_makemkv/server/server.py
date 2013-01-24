@@ -7,7 +7,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id: make_mkv.py 47 2013-01-14 19:32:25Z dave@dlasley.net $
+#   @version    $Id$
 #
 #   @requires-binary   makemkvcon, mkisofs
 import subprocess

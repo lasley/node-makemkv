@@ -7,7 +7,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id: make_mkv_client.py 47 2013-01-14 19:32:25Z dave@dlasley.net $
+#   @version    $Id$
 #
 #   @requires-python-packages   pyqt4, socksipy-branch
 from gui import *
