@@ -228,7 +228,7 @@ class make_mkv_client(object):
                     self.ui_map[drive_id]['check_map'][track_id].setText(0,'Title %s' % track_id)
                     self.ui_map[drive_id]['check_map'][track_id].setText(1,track_info['Output Filename'])
                     self.ui_map[drive_id]['check_map'][track_id].setExpanded(True)
-                    if make_mkv_client.get_size(track_info['Disk Size']) < low_num:
+                    if make_mkv_client.get_size(track_info['Disk Size']) < low_num or ch_cnt == '?':
                         self.ui_map[drive_id]['check_map'][track_id].setBackground(0,self.gui.STYLES['red'])
                         self.ui_map[drive_id]['check_map'][track_id].setCheckState(0, QtCore.Qt.Unchecked )
                     else:

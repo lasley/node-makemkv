@@ -50,7 +50,7 @@ class make_mkv(object):
         ripped_tracks = {'disc_id':  disc_id,
                          'cmd'   :   'rip',}
         for track_id in track_ids.split(','):
-            ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([u'makemkvcon',u'--noscan',u'mkv',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
+            ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([u'makemkvcon',u'--noscan',u'mkv',u'--cache=256',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
         return ripped_tracks
 
     def to_iso(self, out_path,disc_id):
@@ -61,7 +61,7 @@ class make_mkv(object):
             'out_file': u'%s.iso'%out_path,
             'cmd'   :   'iso',
         }
-        decrypt_out = subprocess.check_output([u'makemkvcon', u'--noscan', u'backup' ,u'--decrypt', u'disc:%s'%self.drive_map[disc_id], out_path])   #< to folder, decrypt
+        decrypt_out = subprocess.check_output([u'makemkvcon', u'--noscan', u'backup' ,u'--cache=256' ,u'--decrypt', u'disc:%s'%self.drive_map[disc_id], out_path])   #< to folder, decrypt
         print 'DECRYPT:\n'+decrypt_out+'\n\n'
         iso_out = subprocess.check_output([u'mkisofs', u'-J', u'-r',  u'-iso-level', u'3', u'-udf', u'-allow-limited-size', u'-o', rip_output['out_file'], out_path])  #<  Make iso
         print 'ISO:\n'+iso_out+'\n\n'

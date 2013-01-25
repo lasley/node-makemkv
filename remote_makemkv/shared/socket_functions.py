@@ -175,12 +175,12 @@ class custom_server(custom_socket):
         while 1:
             try:
                 client_vals = self.clients.values()
-                ready_in,ready_out,ready_except = select.select([self.server]+client_vals, client_vals, [])
+                ready_in,ready_out,ready_except = select.select([self.server]+client_vals, [], [])
             except select.error as e:
                 break
             except socket.error as e:
                 break
-            logging.debug('Break select loop')
+            logging.debug('Break select loop, writing to clients %s' % repr(client_vals))
             for s in ready_in:
                 if s == self.server:
                     conn, address = s.accept()
