@@ -151,6 +151,10 @@ class make_mkv_client(object):
                 
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout)
+            self.ui_map[drive_id]['get_info'] = self.gui.button('Rescan Drive', self.thread_finish, self._disc_info, drive_id)
+            self.ui_map[drive_id]['get_info'].setObjectName('btn_disc_info:%s'%drive_id)
+            self.ui_map[drive_id]['get_info'].setToolTip('Scan this disc for track information')
+            
             #   Disc Title (or lack thereof)
             try:
                 self.ui_map[drive_id]['disc_box'].setTitle(u'%s - %s' % (drive_name, disc_info['disc']['Volume Name']))    #<  If it changed
@@ -280,6 +284,7 @@ class make_mkv_client(object):
                
         def rip(thread_return):
             #   Rip endpoint
+            self._reset_button_refresh(drive_id,False)
             drive_id = thread_return['return']['disc_id']
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,enable=True)
@@ -295,9 +300,13 @@ class make_mkv_client(object):
                     self.ui_map[drive_id]['check_map'][track_id].setBackground(0,self.gui.STYLES['red'])
                     self.ui_map[drive_id]['check_map'][track_id].setBackground(1,self.gui.STYLES['red'])
                     self.ui_map[drive_id]['check_map'][track_id].setText(1,'%s - Failed' % track_name)
+            #   Size the columns           
+            self.ui_map[drive_id]['disc_info'].resizeColumnToContents(0)
+            self.ui_map[drive_id]['disc_info'].resizeColumnToContents(1)
                     
         def iso(thread_return):
             #   ISO endpoint
+            self._reset_button_refresh(drive_id,False)
             drive_id = thread_return['return']['disc_id']
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,enable=True)
@@ -333,7 +342,7 @@ class make_mkv_client(object):
         if not_currently_scanning:
             self.systray.tray_message('Operations Complete!','All Current Disc Operations Have Completed.')
     
-    #   Thread/Socket functions
+    #   Button functions
     
     def scan_drives(self, drives):
         ##  Once the command has completed, this emits the finished() signal
@@ -370,7 +379,7 @@ class make_mkv_client(object):
         if len(rip_info()[1]) > 0:
             self._reset_button_refresh(drive_id)
             layout = self.ui_map[drive_id]['disc_layout']
-            make_mkv_client_gui.clear_layout(layout,0,True)
+            make_mkv_client_gui.clear_layout(layout,disable=True)
             return self.socket.send_str('rip|%s|%s|%s' % (rip_info()[0], drive_id, ','.join(rip_info()[1])))
         
     def iso(rip_information):
@@ -383,7 +392,7 @@ class make_mkv_client(object):
         #   @param  Str     drive_id    Drive id (sys location /dev/sr#)
         self._reset_button_refresh(drive_id)
         layout = self.ui_map[drive_id]['disc_layout']
-        make_mkv_client_gui.clear_layout(layout,0,True)
+        make_mkv_client_gui.clear_layout(layout,disable=True)
         return self.socket.send_str('iso|%s/%s|%s' % (self.ui_map['output_dir'].text(), self.ui_map[drive_id]['new_name'].text(), drive_id))
     
     @staticmethod
@@ -399,5 +408,5 @@ class make_mkv_client(object):
     
 ##  Do it now!
 if __name__ == '__main__':
-    make_mkv_client()
+    make_mkv_client('localhost')
     

@@ -75,7 +75,10 @@ class make_mkv(object):
             'disc_id':  disc_id,
             'cmd'   :   'disc_info',
         }
-        disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','dev:%s' % disc_id])
+        try:
+            disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','dev:%s' % disc_id])
+        except subprocess.CalledProcessError as e:
+            exit(e.output)
         track_id = -1
         for line in disc_info.split(make_mkv.NEWLINE_CHAR):
             split_line = make_mkv.COL_PATTERN.split(line)[1::2]

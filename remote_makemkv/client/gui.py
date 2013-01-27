@@ -137,7 +137,7 @@ class make_mkv_client_gui(QtGui.QWidget):
                     pass
                 else:
                     make_mkv_client_gui.clear_layout(item.layout(), disable=disable)
-                if not disable:
+                if not disable and not enable:
                     layout.removeItem(item) 
 
 class makemkv_systray(QtGui.QSystemTrayIcon):
