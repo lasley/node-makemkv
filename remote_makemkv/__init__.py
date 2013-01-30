@@ -1,9 +1,8 @@
 HOST = '127.0.0.1'
 PORT = 6001
 PROXY_HOST = None #< None if none, or 'Host'
-#PROXY_HOST = 'localhost'
 PROXY_PORT = 8080
-OUT_PATH = '/media/Motherload/7-ripp/'
+OUT_PATH = '/media/Motherload/1-ripping/'
 DRIVE_NAME_MAPS = {
         '/dev/sr0'  :   '1st',
         '/dev/sr1'  :   '3rd',
