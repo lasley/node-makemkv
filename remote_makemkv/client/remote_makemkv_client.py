@@ -340,7 +340,7 @@ class make_mkv_client(object):
                 except KeyError:    #<  button doesn't exist yet
                     pass
         if not_currently_scanning:
-            self.systray.tray_message('Operations Complete!','All Current Disc Operations Have Completed.')
+            self.systray.tray_message('All Current Disc Operations Have Completed.')
     
     #   Button functions
     

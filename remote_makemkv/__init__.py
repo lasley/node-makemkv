@@ -1,6 +1,7 @@
 HOST = '192.168.69.104'
 PORT = 6001
 PROXY_HOST = None #< None if none, or 'Host'
+PROXY_HOST = 'localhost'
 PROXY_PORT = 8080
 OUT_PATH = '/media/Motherload/7-ripp/'
 DRIVE_NAME_MAPS = {

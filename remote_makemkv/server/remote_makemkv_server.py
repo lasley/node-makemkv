@@ -41,6 +41,7 @@ class make_mkv(object):
             "scan_drives":  self.scan_drives,
             'iso'       :   self.to_iso,
         }
+        SHORT_TERM_MEMORY = {'all':True} #< Hopefully there's no memory loss :P
         server = socket_functions.custom_server(SOCKET_ARGS)
         server.run()
     
@@ -134,6 +135,16 @@ class make_mkv(object):
         ##  Scan for DVD/BD drives w/o using MakeMkv
         #   @return Dict keyed by drive index (as MakeMkv recognizes them - /dev/sr#)
         drives = {}
+        
+    def memory_handler(scanning=True,data=None,drive_id=None):
+        if scanning:
+            if self.SHORT_TERM_MEMORY['all']:
+k
+            else:
+                return False
+        else:
+            if drive_id:
+                self.SHORT_TERM_MEMORY[drive_id] = data
     
 if __name__ == '__main__':
     #from pprint import pprint

@@ -153,8 +153,8 @@ class makemkv_systray(QtGui.QSystemTrayIcon):
         self.setContextMenu(menu)
         if _show:
             self.show()
-    def tray_message(self,title,message):
+    def tray_message(self,message):
         ##  Show a tray icon message
         #   @param  Str title   Title of message
         #   @param  Str message Message Str 
-        self.showMessage(title,message) 
+        self.showMessage('Remote MakeMKV',message) 
