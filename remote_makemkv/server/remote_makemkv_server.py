@@ -19,12 +19,16 @@ import sys
 import os
 dirname = os.path.dirname(__file__)
 sys.path.append(os.path.join(dirname, "../.."))
+from remote_makemkv import MAKEMKVCON_PATH
 from remote_makemkv.shared.config_to_dict import config_to_dict
 import remote_makemkv.shared.socket_functions as socket_functions
 
-#   Detect root, error if not
-if os.getuid() != 0:
-    raise Exception('Must run as root!')
+#   Detect root, error if not (ignore on Windows?)
+try:
+    if os.getuid() != 0:
+        raise Exception('Must run as root!')
+except AttributeError:
+    pass #< Windows
 
 server_settings = config_to_dict().do('settings.ini')
 
@@ -51,7 +55,7 @@ class make_mkv(object):
         ripped_tracks = {'disc_id':  disc_id,
                          'cmd'   :   'rip',}
         for track_id in track_ids.split(','):
-            ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([u'makemkvcon',u'--noscan',u'mkv',u'--cache=256',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
+            ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([MAKEMKVCON_PATH,u'--noscan',u'mkv',u'--cache=256',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
         return ripped_tracks
 
     def to_iso(self, out_path,disc_id):
@@ -62,7 +66,7 @@ class make_mkv(object):
             'out_file': u'%s.iso'%out_path,
             'cmd'   :   'iso',
         }
-        decrypt_out = subprocess.check_output([u'makemkvcon', u'--noscan', u'backup' ,u'--cache=256' ,u'--decrypt', u'disc:%s'%self.drive_map[disc_id], out_path])   #< to folder, decrypt
+        decrypt_out = subprocess.check_output([MAKEMKVCON_PATH, u'--noscan', u'backup' ,u'--cache=256' ,u'--decrypt', u'disc:%s'%self.drive_map[disc_id], out_path])   #< to folder, decrypt
         print 'DECRYPT:\n'+decrypt_out+'\n\n'
         iso_out = subprocess.check_output([u'mkisofs', u'-J', u'-r',  u'-iso-level', u'3', u'-udf', u'-allow-limited-size', u'-o', rip_output['out_file'], out_path])  #<  Make iso
         print 'ISO:\n'+iso_out+'\n\n'
@@ -77,7 +81,7 @@ class make_mkv(object):
             'cmd'   :   'disc_info',
         }
         try:
-            disc_info = subprocess.check_output(['makemkvcon','--noscan','-r','info','dev:%s' % disc_id])
+            disc_info = subprocess.check_output([MAKEMKVCON_PATH,'--noscan','-r','info','dev:%s' % disc_id])
         except subprocess.CalledProcessError as e:
             exit(e.output)
         track_id = -1
@@ -120,7 +124,7 @@ class make_mkv(object):
         drives = {'cmd'   :   'scan_drives',}
         self.drive_map = {}
         try:
-            drive_scan = subprocess.check_output(['makemkvcon','-r','info'])
+            drive_scan = subprocess.check_output([MAKEMKVCON_PATH,'-r','info'])
         except subprocess.CalledProcessError as e:
             drive_scan = e.output
         for line in drive_scan.split(make_mkv.NEWLINE_CHAR):
@@ -136,15 +140,15 @@ class make_mkv(object):
         #   @return Dict keyed by drive index (as MakeMkv recognizes them - /dev/sr#)
         drives = {}
         
-    def memory_handler(scanning=True,data=None,drive_id=None):
-        if scanning:
-            if self.SHORT_TERM_MEMORY['all']:
-k
-            else:
-                return False
-        else:
-            if drive_id:
-                self.SHORT_TERM_MEMORY[drive_id] = data
+    #def memory_handler(scanning=True,data=None,drive_id=None):
+    #    if scanning:
+    #        if self.SHORT_TERM_MEMORY['all']:
+    #
+    #        else:
+    #            return False
+    #    else:
+    #        if drive_id:
+    #            self.SHORT_TERM_MEMORY[drive_id] = data
     
 if __name__ == '__main__':
     #from pprint import pprint

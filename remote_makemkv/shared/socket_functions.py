@@ -163,8 +163,8 @@ class custom_server(custom_socket):
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server.setblocking(0)
-        self.server.bind(('', PORT))
-        logging.debug('Listening on %s' % PORT)
+        self.server.bind((HOST, PORT))
+        logging.debug('Listening on %s:%s' % (HOST,PORT))
         self.server.listen(5)
         
     def __del__(self):
