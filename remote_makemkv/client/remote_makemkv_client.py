@@ -12,7 +12,6 @@
 #   @requires-python-packages   pyqt4, socksipy-branch
 from gui import *
 import math
-
 import sys
 import os
 dirname = os.path.dirname(__file__)
@@ -30,18 +29,19 @@ class make_mkv_client(object):
         ##  @param  Int proxy_port  SOCKS proxy port
         self.rip_button_map = {}
         self.ui_map = {}
-        self.scan_operations = 0
-        self.init_ui()
+        self.scan_operations = {}
         SOCKET_ARGS = {
             "scan_drives"   :   self.scan_drives,
             "disc_info"     :   self.disc_info,
             "rip"           :   self.rip,
             "iso"           :   self.iso,
+            "get_busy"      :   self.get_busy,
         }
         self.socket = socket_functions.custom_client(SOCKET_ARGS)
         self.recv_thread = worker_thread(self.socket.recv)
         self.recv_thread.finished.connect(self.thread_finish)
         self.recv_thread.start()
+        self.init_ui()
         sys.exit(self.app.exec_())
     
     #   UI Related
@@ -71,7 +71,7 @@ class make_mkv_client(object):
         self.ui_map['rip_all'].setEnabled(False)
         top_hbox.addWidget(self.ui_map['rip_all'])
         #   Refresh All
-        self.ui_map['refresh_all'] = self.gui.button('Refresh Drive(s)', self.thread_finish, self._scan_drives)
+        self.ui_map['refresh_all'] = self.gui.button('Refresh Drive(s)', self.thread_finish, self._scan_drives, True)
         self.ui_map['refresh_all'].setObjectName('btn_refresh_drives')
         top_hbox.addWidget(self.ui_map['refresh_all'])
         #   Disc UI
@@ -79,12 +79,14 @@ class make_mkv_client(object):
         self.ui_map['all_discs'].setObjectName('lout_all_discs')
         qgrid.addLayout(self.ui_map['all_discs'],2,0,5,4)
         #   Bottom Credit Line
-        credits_label = QtGui.QLabel(u'MakeMKV \u00A9 2008-2013 GuinpinSoft inc - <a href="http://www.makemkv.com/buy">http://www.makemkv.com/buy</a><br>Remote MakeMKV GUI written by David Lasley - <a href="http://code.google.com/p/remote-makemkv/">http://code.google.com/p/remote-makemkv/</a> and licensed under GNU GPL v3.')
+        credits_label = QtGui.QLabel(u'MakeMKV \u00A9 2008-2013 GuinpinSoft inc - <a href="http://www.makemkv.com/buy">http://www.makemkv.com/buy</a><br>Remote MakeMKV GUI written by David Lasley - <a href="http://code.google.com/p/remote-makemkv/">http://code.google.com/p/remote-makemkv/</a>')
         credits_label.setAlignment(QtCore.Qt.AlignCenter)
         credits_label.setTextFormat(QtCore.Qt.RichText)
         credits_label.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Fixed)
         qgrid.addWidget(credits_label,8,0,1,4)
         self.gui.main_layout.addLayout(qgrid)
+        self._scan_drives()
+        #self._scan_drives()
     
     def thread_finish(self, thread_return):
         ##  Generic Thread End-Point (GUI UPDATES)
@@ -101,10 +103,10 @@ class make_mkv_client(object):
                 except KeyError:
                     drive_name = drive_id
                 self.ui_map[drive_id] = {}
-                self.ui_map[drive_id]['get_info'] = self.gui.button('Rescan Drive', self.thread_finish, self._disc_info, drive_id)
+                self.ui_map[drive_id]['get_info'] = self.gui.button('Rescan Drive', self.thread_finish, self._disc_info, drive_id, True)
                 self.ui_map[drive_id]['get_info'].setObjectName('btn_disc_info:%s'%drive_id)
                 self.ui_map[drive_id]['get_info'].setToolTip('Scan this disc for track information')
-                self.ui_map[drive_id]['get_info'].clicked.emit(True)
+                #self.ui_map[drive_id]['get_info'].clicked.emit(True)
                 self.ui_map[drive_id]['disc_box'] = self.gui.group_box('%s - %s'%(drive_name,movie))
                 self.ui_map[drive_id]['disc_box'].setObjectName('disc_box:%s'%drive_id)
                 self.ui_map[drive_id]['disc_box'].setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
@@ -112,6 +114,7 @@ class make_mkv_client(object):
                 self.ui_map[drive_id]['disc_box'].setLayout(self.ui_map[drive_id]['disc_layout'])
                 self.ui_map[drive_id]['disc_layout'].addWidget(self.ui_map[drive_id]['get_info'],1)
                 layout.addWidget(self.ui_map[drive_id]['disc_box'])
+                self._disc_info(drive_id)
             self._reset_button_refresh(add_operation=False)
             main_layout = self.gui.main_layout.findChild(object,'lout_all_discs')
             make_mkv_client_gui.clear_layout(main_layout)
@@ -151,7 +154,7 @@ class make_mkv_client(object):
                 
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout)
-            self.ui_map[drive_id]['get_info'] = self.gui.button('Rescan Drive', self.thread_finish, self._disc_info, drive_id)
+            self.ui_map[drive_id]['get_info'] = self.gui.button('Rescan Drive', self.thread_finish, self._disc_info, drive_id, True)
             self.ui_map[drive_id]['get_info'].setObjectName('btn_disc_info:%s'%drive_id)
             self.ui_map[drive_id]['get_info'].setToolTip('Scan this disc for track information')
             
@@ -210,7 +213,7 @@ class make_mkv_client(object):
                 sizes = sorted(sizes)
                 ##  Upper quartile
                 try:
-                    high_mid = ( len( sizes ) ) * 0.75
+                    high_mid = ( len( sizes ) - 1 ) * 0.75
                     uq = sizes[ high_mid ]
                 except TypeError:   #<  There were an even amount of values
                     ceil = int( math.ceil( high_mid ) )
@@ -281,11 +284,13 @@ class make_mkv_client(object):
                 self.ui_map[drive_id]['disc_info'].resizeColumnToContents(1)
             else:   #<  Rescan button
                 layout.addWidget(self.ui_map[drive_id]['get_info'])
+                
+            self.socket.send_str('get_busy')
                
         def rip(thread_return):
             #   Rip endpoint
-            self._reset_button_refresh(drive_id,False)
             drive_id = thread_return['return']['disc_id']
+            self._reset_button_refresh(drive_id,False)
             layout = self.ui_map[drive_id]['disc_layout']
             make_mkv_client_gui.clear_layout(layout,enable=True)
             del thread_return['return']['disc_id']
@@ -320,17 +325,36 @@ class make_mkv_client(object):
             'iso'           :   iso,
         }
         return map_it[thread_return['cmd']](thread_return)
+    
+    def get_busy(self, return_val):
+        logging.debug(return_val)
+        #exit()
+        for drive_id,busy in return_val['val'].iteritems():
+            if busy:
+                #print drive_id,busy
+                #self._reset_button_refresh()
+                if drive_id != 'all':
+                    logging.debug('%s: %s' % (drive_id,str(busy)))
+                    self._reset_button_refresh(drive_id)
+                    #pass
+                    #
+                    #try:
+                    #make_mkv_client_gui.clear_layout(self.ui_map[drive_id]['disc_layout'], disable=True)
+                    #except KeyError:
+                    #    pass
+        return {'cmd':'pass'}
 
     def _reset_button_refresh(self, drive_id=None, add_operation=True):
         ##  Reset the global refresh button if neccessita
         #   Enable/Disable Single Disc Buttons
         #   Also throws tray_message to alert of disc operation completion
+        logging.debug('Reset %s %s' % (drive_id,str(add_operation)))
         if add_operation:
-            self.scan_operations+=1
+            self.scan_operations[drive_id] = True
             not_currently_scanning = False
         else:
-            self.scan_operations-=1
-            not_currently_scanning = self.scan_operations==0
+            del self.scan_operations[drive_id]
+            not_currently_scanning = len(self.scan_operations) == 0
         self.ui_map['rip_all'].setEnabled( not_currently_scanning )
         self.ui_map['refresh_all'].setEnabled( not_currently_scanning )
         if drive_id is not None:
@@ -341,7 +365,7 @@ class make_mkv_client(object):
                     pass
         if not_currently_scanning:
             self.systray.tray_message('All Current Disc Operations Have Completed.')
-    
+            
     #   Button functions
     
     def scan_drives(self, drives):
@@ -351,9 +375,11 @@ class make_mkv_client(object):
         logging.debug('Emitting Finish(%s)' % repr({'return':drives,'cmd':cmd}))
         self.recv_thread.finished.emit( {'return':drives,'cmd':cmd} )
 
-    def _scan_drives(self):
+    def _scan_drives(self,cache_clear=False):
         ##  Wrapper function for scanning the drives
         self._reset_button_refresh()
+        if cache_clear:
+            self.socket.send_str('clear_cache')
         return self.socket.send_str('scan_drives')
     
     def disc_info(self,disc_info):
@@ -361,10 +387,15 @@ class make_mkv_client(object):
         cmd = disc_info['cmd']
         del disc_info['cmd']
         self.recv_thread.finished.emit( {'return':disc_info,'cmd':cmd} )
-    def _disc_info(self,drive_id):
+    def _disc_info(self,drive_id,cache_clear=False):
         ##  Wrapper function for getting disc info
         #   @param  Str     drive_id    Drive id (sys location /dev/sr#)
         self._reset_button_refresh(drive_id)
+        if cache_clear:
+            logging.debug('Clearing disc_info[u\'%s\']' % drive_id)
+            self.socket.send_str('clear_cache|disc_info[u\'%s\']' % drive_id)
+        else:
+            logging.debug('Not clearing cache')
         return self.socket.send_str('disc_info|%s' % (drive_id))
     
     def rip(self,rip_information):

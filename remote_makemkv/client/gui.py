@@ -136,7 +136,7 @@ class make_mkv_client_gui(QtGui.QWidget):
                 elif isinstance(item, QtGui.QSpacerItem):
                     pass
                 else:
-                    make_mkv_client_gui.clear_layout(item.layout(), disable=disable)
+                    make_mkv_client_gui.clear_layout(item.layout(), disable=disable, enable=enable)
                 if not disable and not enable:
                     layout.removeItem(item) 
 

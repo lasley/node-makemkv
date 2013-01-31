@@ -1,4 +1,4 @@
-* Edit `remote_makemkv/__init__.py` for desired settings.
+* Edit `remote_makemkv/settings.py` for desired settings.
 
 * Usage Instructions At:
     https://dlasley.net/blog/?p=161
