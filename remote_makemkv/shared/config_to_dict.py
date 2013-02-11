@@ -4,7 +4,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id$
+#   @version    $Id: config_to_dict.py 76 2013-01-24 19:04:37Z dave@dlasley.net $
 #
 #   Thanks to Alex Martelli - http://stackoverflow.com/questions/3220670/read-all-the-contents-in-ini-file-into-dictionary-with-python
 import ConfigParser

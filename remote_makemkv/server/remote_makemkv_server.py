@@ -7,7 +7,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id$
+#   @version    $Id: remote_makemkv_server.py 100 2013-01-31 22:28:29Z dave@dlasley.net $
 #
 #   @requires-binary   makemkvcon, mkisofs
 import subprocess
@@ -17,6 +17,7 @@ import shutil
 import logging
 import sys
 import os
+import md5
 dirname = os.path.dirname(__file__)
 sys.path.append(os.path.join(dirname, "../.."))
 from remote_makemkv import MAKEMKVCON_PATH
@@ -46,10 +47,9 @@ class make_mkv(object):
             'iso'       :   self.to_iso,
             'get_busy'  :   self.get_busy,
         }
-        server = socket_functions.custom_server(SOCKET_ARGS,['get_busy',])
+        self.server = socket_functions.custom_server(SOCKET_ARGS,['get_busy',])
         self.busy_devices = {}
-        #server.SHORT_TERM_MEMORY = {'all':True}
-        server.run()
+        self.server.run()
     
     def get_busy(self,disc_id=None,busy=False):
         if disc_id is None:
@@ -70,17 +70,25 @@ class make_mkv(object):
     
     def rip_track(self, out_path,disc_id,track_ids):
         if self.get_busy(disc_id, True):
-            if not os.path.isdir(out_path):
-                os.mkdir(out_path)
-            ripped_tracks = {'disc_id':  disc_id,
-                             'cmd'   :   'rip',}
-            for track_id in track_ids.split(','):
-                ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([MAKEMKVCON_PATH,u'--noscan',u'mkv',u'--cache=256',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
-            self.get_busy(disc_id)
-        #else:
-        #    for track_id in track_ids.split(','):
-        #        
-            return ripped_tracks
+            ##   Make sure we're working with the same disc
+            #disc_info = self.disc_info(disc_id)
+            #disc_info_hash = json.dumps(disc_info)
+            #cache_info_hash = json.dumps(
+            #        self.server.SHORT_TERM_MEMORY["disc_info[u'%s']" % disc_id]
+            #    )
+            #if disc_info_hash == cache_info_hash: #< Valid cache
+                if not os.path.isdir(out_path):
+                    os.mkdir(out_path)
+                ripped_tracks = {'disc_id':  disc_id,
+                                 'cmd'   :   'rip',}
+                for track_id in track_ids.split(','):
+                    ripped_tracks[track_id] = '1 titles saved.' in subprocess.check_output([MAKEMKVCON_PATH,u'--noscan',u'mkv',u'--cache=256',u'dev:%s'%disc_id,u'%s'%track_id,out_path])
+                self.get_busy(disc_id)
+                return ripped_tracks
+            #else:   #< Return the actual disc @todo some sort of error here
+            #    logging.debug('Disc cache was not fresh. Saving & Returning correct disc.')
+            #    self.server.SHORT_TERM_MEMORY["disc_info[u'%s']" % disc_id] = disc_info
+            #    self.server.send_str(disc_info_hash)
 
     def to_iso(self, out_path,disc_id):
         if self.get_busy(disc_id, True):
@@ -97,7 +105,7 @@ class make_mkv(object):
             print 'ISO:\n'+iso_out+'\n\n'
             shutil.rmtree(out_path) #<  RM disc tree
             self.get_busy(disc_id)
-            return rip_output   #< Exceptions from failures should cause this to not get hit on fail?
+            return rip_output
 
     def disc_info(self, disc_id,thread_id=None):
         if self.get_busy(disc_id, True):

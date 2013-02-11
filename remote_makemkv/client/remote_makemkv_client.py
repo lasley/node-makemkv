@@ -7,7 +7,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id$
+#   @version    $Id: remote_makemkv_client.py 100 2013-01-31 22:28:29Z dave@dlasley.net $
 #
 #   @requires-python-packages   pyqt4, socksipy-branch
 from gui import *
@@ -44,7 +44,8 @@ class make_mkv_client(object):
         self.init_ui()
         sys.exit(self.app.exec_())
     
-    #   UI Related
+
+##   UI Related
     
     def init_ui(self):
         ##  Init The GUI
@@ -57,41 +58,54 @@ class make_mkv_client(object):
         self.gui.setStyleSheet(self.gui.CSS)
         self.systray = makemkv_systray(self.gui,icon)
         qgrid = QtGui.QGridLayout()
+        
         ##  Top Section
         #   Output Dir
         top_hbox = QtGui.QHBoxLayout()
         qgrid.addLayout(top_hbox,1,0,1,4)
         out_label = QtGui.QLabel('Output Dir:')
-        #out_label.setAlignment(QtCore.Qt.AlignRight)
         top_hbox.addWidget(out_label)
         self.ui_map['output_dir'] = QtGui.QLineEdit(OUT_PATH)
         top_hbox.addWidget(self.ui_map['output_dir'])
+        
         #   Rip All
         self.ui_map['rip_all'] = self.gui.button('Rip Selected', self.thread_finish, click_all_buttons)
         self.ui_map['rip_all'].setEnabled(False)
         top_hbox.addWidget(self.ui_map['rip_all'])
+        
         #   Refresh All
         self.ui_map['refresh_all'] = self.gui.button('Refresh Drive(s)', self.thread_finish, self._scan_drives, True)
         self.ui_map['refresh_all'].setObjectName('btn_refresh_drives')
         top_hbox.addWidget(self.ui_map['refresh_all'])
+        
         #   Disc UI
         self.ui_map['all_discs'] = QtGui.QHBoxLayout()
         self.ui_map['all_discs'].setObjectName('lout_all_discs')
         qgrid.addLayout(self.ui_map['all_discs'],2,0,5,4)
+        
         #   Bottom Credit Line
-        credits_label = QtGui.QLabel(u'MakeMKV \u00A9 2008-2013 GuinpinSoft inc - <a href="http://www.makemkv.com/buy">http://www.makemkv.com/buy</a><br>Remote MakeMKV GUI written by David Lasley - <a href="http://code.google.com/p/remote-makemkv/">http://code.google.com/p/remote-makemkv/</a>')
+        credits_label = QtGui.QLabel(u'''MakeMKV \u00A9 2008-2013 GuinpinSoft inc -
+                                            <a href="http://www.makemkv.com/buy">http://www.makemkv.com/buy</a>''')
         credits_label.setAlignment(QtCore.Qt.AlignCenter)
         credits_label.setTextFormat(QtCore.Qt.RichText)
         credits_label.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Fixed)
-        qgrid.addWidget(credits_label,8,0,1,4)
+        qgrid.addWidget(credits_label,8,0,1,2)
+        credits_label = QtGui.QLabel(u'''Remote MakeMKV GUI written by David Lasley -
+                                            <a href="http://code.google.com/p/remote-makemkv/downloads/list">http://code.google.com/p/remote-makemkv/</a>
+                                        </span>''')
+        credits_label.setAlignment(QtCore.Qt.AlignCenter)
+        credits_label.setTextFormat(QtCore.Qt.RichText)
+        credits_label.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Fixed)
+        qgrid.addWidget(credits_label,8,2,1,2)
+        
         self.gui.main_layout.addLayout(qgrid)
         self._scan_drives()
-        #self._scan_drives()
     
     def thread_finish(self, thread_return):
         ##  Generic Thread End-Point (GUI UPDATES)
         #   @param  Dict    thread_return  Thread output
         logging.debug('thread_finish(%s)' % thread_return['cmd'])
+        
         #   Define functions
         def scan_drives(thread_return):
             #   scan_drives endpoint
@@ -106,7 +120,6 @@ class make_mkv_client(object):
                 self.ui_map[drive_id]['get_info'] = self.gui.button('Rescan Drive', self.thread_finish, self._disc_info, drive_id, True)
                 self.ui_map[drive_id]['get_info'].setObjectName('btn_disc_info:%s'%drive_id)
                 self.ui_map[drive_id]['get_info'].setToolTip('Scan this disc for track information')
-                #self.ui_map[drive_id]['get_info'].clicked.emit(True)
                 self.ui_map[drive_id]['disc_box'] = self.gui.group_box('%s - %s'%(drive_name,movie))
                 self.ui_map[drive_id]['disc_box'].setObjectName('disc_box:%s'%drive_id)
                 self.ui_map[drive_id]['disc_box'].setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)

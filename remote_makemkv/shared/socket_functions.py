@@ -4,7 +4,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id$
+#   @version    $Id: socket_functions.py 100 2013-01-31 22:28:29Z dave@dlasley.net $
 #
 #   @requires-python-packages   pyqt4, socksipy-branch
 import select
@@ -49,7 +49,7 @@ class custom_socket(threading.Thread):
         raise RuntimeError(error_info['msg'])
     
     def clear_cache(self, cache_id=None):
-        logging.debug('Cleaing %s from cache' % repr(cache_id))
+        logging.debug('Clearing %s from cache' % repr(cache_id))
         if cache_id:
             try:
                 del self.SHORT_TERM_MEMORY[cache_id]
@@ -82,7 +82,7 @@ class custom_socket(threading.Thread):
                     logging.debug( 'Empty command/args')
             else:
                 stringified = '%s%s' % (cmd,repr(args))
-                logging.debug( 'Cache Function: %s  %s  %s' % (stringified,cmd, repr(self.no_cache)))
+                logging.debug( 'Cache Function: %s  %s' % (stringified,cmd))
                 if self.memory_handler(stringified) and cmd not in self.no_cache:
                     self.send_str( self.memory_handler(stringified) )
                 else:
