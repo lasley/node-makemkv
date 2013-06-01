@@ -4,7 +4,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id: gui.py 100 2013-01-31 22:28:29Z dave@dlasley.net $
+#   @version    $Id: gui.py 99 2013-01-31 22:24:22Z dave@dlasley.net $
 #
 #   @requires-python-packages   pyqt4, socksipy-branch
 
@@ -141,20 +141,27 @@ class make_mkv_client_gui(QtGui.QWidget):
                     layout.removeItem(item) 
 
 class makemkv_systray(QtGui.QSystemTrayIcon):
-    ##  Systray Class
+    '''  Systray Class  '''
     def __init__(self, parent, icon, _show=True):
-        ##  Init
-        #   @param  QtGui.QWidget   parent  Parent obj
-        #   @param  QtGui.QIcon     icon    Icon
+        '''
+            Init
+            @param  QtGui.QWidget   parent  Parent obj
+            @param  QtGui.QIcon     icon    Icon
+        '''
         super(makemkv_systray, self).__init__(icon, parent)
         #QtGui.QSystemTrayIcon.__init__(self, icon, parent)
         menu = QtGui.QMenu(parent)
         exitAction = menu.addAction("Exit")
+        exitAction.triggered.connect(exit)
         self.setContextMenu(menu)
+        self.messageClicked.connect(parent.activateWindow)
         if _show:
             self.show()
+            
     def tray_message(self,message):
-        ##  Show a tray icon message
-        #   @param  Str title   Title of message
-        #   @param  Str message Message Str 
+        '''
+            Show a tray icon message
+            @param  Str title   Title of message
+            @param  Str message Message Str
+        '''
         self.showMessage('Remote MakeMKV',message) 

@@ -7,7 +7,7 @@
 #   @website    http://code.google.com/p/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id: remote_makemkv_client.py 100 2013-01-31 22:28:29Z dave@dlasley.net $
+#   @version    $Id: remote_makemkv_client.py 102 2013-02-06 01:27:56Z dave@dlasley.net $
 #
 #   @requires-python-packages   pyqt4, socksipy-branch
 from gui import *
@@ -16,9 +16,9 @@ import sys
 import os
 dirname = os.path.dirname(__file__)
 sys.path.append(os.path.join(dirname, "../.."))
-import remote_makemkv.shared.socket_functions as socket_functions
-from remote_makemkv.video_renaming.rename import rename
-from remote_makemkv import OUT_PATH,DRIVE_NAME_MAPS,OUTLIER_MODIFIER,logging
+from remote_makemkv.shared.custom_socket import socket_functions
+from remote_makemkv.shared.video_renaming.rename import rename
+from remote_makemkv import OUT_PATH, DRIVE_NAME_MAPS, OUTLIER_MODIFIER, logging, HOST, PORT, PROXY_HOST, PROXY_PORT
 
 class make_mkv_client(object):
     ##  Main class
@@ -37,7 +37,8 @@ class make_mkv_client(object):
             "iso"           :   self.iso,
             "get_busy"      :   self.get_busy,
         }
-        self.socket = socket_functions.custom_client(SOCKET_ARGS)
+        self.socket = socket_functions.custom_client(
+            HOST, PORT, PROXY_HOST, PROXY_PORT, SOCKET_ARGS)
         self.recv_thread = worker_thread(self.socket.recv)
         self.recv_thread.finished.connect(self.thread_finish)
         self.recv_thread.start()
