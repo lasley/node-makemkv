@@ -24,6 +24,7 @@ class MakeMKVClient
             console.log(data);
             data = JSON.parse(data);
             switch (data['cmd'])
+                when 'change_out_dir' then @change_out_dir(data['data'])
                 when 'scan_drives' then @scan_drives(data['data'])
         )
         socket.on('disconnect', () ->
@@ -44,5 +45,10 @@ class MakeMKVClient
             col.innerHTML = drive + ' ' + disc
             col.className = 'col-md-' + col_width
             div.appendChild(col)
+            
+    change_out_dir: (data) =>
+        #   Receive output dir and change on display
+        #   @param  dict    data    Data dict passed from server
+        document.getElementById('output_dir').value = data
         
 client = new MakeMKVClient()

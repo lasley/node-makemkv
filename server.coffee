@@ -69,25 +69,23 @@ class MakeMKVServer
 
         socket.on('connection', (client) =>
             
-            derp = (msg)=>@do_broadcast(socket, msg)
-            @MAKEMKV.scan_drives(derp)
+            #   Send cache to client
+            do_broadcast = (msgs)=>
+                for msg in msgs 
+                    @do_broadcast(socket, msg)
+            @MAKEMKV.display_cache(do_broadcast)
             
+            #   Socket debugging
             client.on('message', (data) =>
                 console.log('Client sent: ', data)
             )
-            
             client.on('disconnect', () =>
                 console.log('client d/c')
-            )
-            
-            client.on('emit_data', (data) =>
-                client.broadcast.send(JSON.stringify(data))
             )
         )
             
     do_broadcast: (socket, msg) ->
         socket.sockets.send(JSON.stringify(msg))
-        console.log(msg)
         
     do_disconnect: () ->
         # Maybe do something here?

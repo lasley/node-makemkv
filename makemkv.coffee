@@ -18,7 +18,7 @@ spawn = require('child_process').spawn
 
 class MakeMKV
 
-    constructor: (@save_to) -> #< Assign save_to
+    constructor: (save_to) -> #< Assign save_to
         @MAKEMKVCON_PATH = '/usr/bin/makemkvcon'
         @NEWLINE_CHAR = '\n'
     
@@ -30,7 +30,37 @@ class MakeMKV
         @RESERVED_CHAR_MAP = { '/':'-', '\\':'-', '?':' ', '%':' ', '*':' ', \
                              ':':'-', '|':'-', '"':' ', '<':' ', '>':' ', }
         @PERMISSIONS = {'file':'0666', 'dir':'0777'} #< New file and dir permissions
-        
+        @cache = {}
+        @change_out_dir(save_to)
+    
+    cache_data: (data) =>
+        #   Cache data to variable for when clients join
+        #   @param  dict    data    Data obj, must contain keys `cmd`, `data`
+        if not @cache[data['cmd']]
+            @cache[data['cmd']] = data['data']
+        else #< Update the dict, instead of replace
+            for key, val in data['data']
+                @cache[data['cmd']][key] = val
+    
+    display_cache: (callback=false) =>
+        #   Send cached data to client in logic order
+        #       scan_drives, disc_info, rip_track
+        cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip']
+        cached = []
+        for cmd in cmd_order
+            if @cache[cmd]
+                cached.push(@cache[cmd])
+
+        if callback
+            callback(cached)
+        else
+            cached
+    
+    change_out_dir: (dir, callback=false) =>
+        #   Register change to save directory
+        @save_to = dir
+        @cache['change_out_dir'] = {'cmd':'change_out_dir', 'data':@save_to}
+    
     get_busy: (disc_id, busy) =>
         #   Determine which discs are being used
         #   @param  int disc_id Disc ID
@@ -66,6 +96,8 @@ class MakeMKV
             track_id = track_ids.pop()
             
             if track_id == undefined #< Tracks done
+                
+                @cache_data(ripped_tracks)
                 if callback
                     callback(ripped_tracks)
                 else
@@ -115,6 +147,8 @@ class MakeMKV
                             if code == 0
                                 #   @todo - Delete the tree
                                 @get_busy(disc_id)
+                                
+                                @cache_data(data)
                                 if callback
                                     callback(data)
                                 else
@@ -185,6 +219,8 @@ class MakeMKV
                         #   Release disc, set cache_refreshed, and return
                         @get_busy(disc_id)
                         info_out['data']['cache_refreshed'] = new Date()
+                        
+                        @cache_data(info_out)
                         if callback
                             callback(info_out)
                         else
@@ -222,6 +258,7 @@ class MakeMKV
                         @drive_map[drive_location] = info[1].split(':')[1] #<    Index the drive location to makemkv's drive ID
                 @get_busy(false)
                 
+                @cache_data(drives)
                 if callback
                     callback(drives)
                 else

@@ -14,9 +14,31 @@
 <body>
     
     <div class='container-fluid'>
-        <div class='row' id='main'>
-            <!-- MakeMKV Data   -->
+        <!--    Out dir, rip, and refresh buttons    -->
+        <div class='row well well-sm' id='top'>
+            <div class='col-md-6'>
+                <form class='form-horizontal'>
+                    <div class='form-group'>
+                        <label for='output_dir' class='col-sm-2 control-label'>Output Directory:</label>
+                        <div class='col-sm-9'>
+                            <input type='text' id='output_dir' class='form-control' />
+                            
+                        </div>
+                        <div class='col-sm-1'>
+                            <button type='button' class='btn btn-default'>Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class='col-md-1 col-md-offset-2'>
+                <button type='button' class='btn btn-default'>Rip Selected</button>
+            </div>
+            <div class='col-md-1 col-md-offset-1'>
+                <button type='button' class='btn btn-default'>Refresh Drive(s)</button>
+            </div>
         </div>
+        <!-- MakeMKV Data   -->
+        <div class='row' id='main'> </div>
     </div>
 
     <!-- Scripts -->
