@@ -28,7 +28,7 @@ class MakeMKVServer
     OUTPUT_DIR: '/media/Motherload/nodemkv'
 
     constructor: (port) ->
-        @MAKEMKV = new MakeMKV(@OUTPUT_DIR)
+        @MakeMKV = new MakeMKV(@OUTPUT_DIR)
         server = http.createServer((req, res) =>
             req.setEncoding 'utf8'
             path = url.parse(req.url).pathname
@@ -69,23 +69,48 @@ class MakeMKVServer
 
         socket.on('connection', (client) =>
             
-            #   Send cache to client
-            do_broadcast = (msgs)=>
-                for msg in msgs 
-                    @do_broadcast(socket, msg)
-            @MAKEMKV.display_cache(do_broadcast)
+            single_broadcast = (data) => @do_emit(socket, data)
+            
+            #   Receive signals, perform actions
+            client.on('display_cache', (data) =>
+                #   Send cache to client
+                multi_broadcast = (msgs)=>
+                    for msg in msgs 
+                        @do_emit(socket, msg)
+                @MakeMKV.display_cache(multi_broadcast)
+            )
+            client.on('change_out_dir', (data) =>
+                #   User has sent command to change save_dir
+                console.log('changing out dir')
+                @MakeMKV.change_out_dir(data, single_broadcast)
+            )
+            client.on('scan_drives', (data) =>
+                #   User has sent command to scan drives
+                console.log('scanning drives')
+                @MakeMKV.scan_drives(single_broadcast)
+            )
+            client.on('disc_info', (data) =>
+                #   User has sent command to retrieve single disc info
+                console.log('getting disc info for', data)
+                @MakeMKV.disc_info(data, single_broadcast)
+            )
+            
             
             #   Socket debugging
-            client.on('message', (data) =>
-                console.log('Client sent: ', data)
+            client.on('message', (data) ->
+                console.log('Client sent:', data)
             )
-            client.on('disconnect', () =>
-                console.log('client d/c')
+            client.on('disconnect', () ->
+                console.log('Client d/c')
             )
+            
         )
             
-    do_broadcast: (socket, msg) ->
-        socket.sockets.send(JSON.stringify(msg))
+    do_emit: (socket, msg) ->
+        cmd = msg['cmd']
+        data = msg['data']
+        console.log(data)
+        socket.sockets.emit(cmd, data)
         
     do_disconnect: () ->
         # Maybe do something here?
