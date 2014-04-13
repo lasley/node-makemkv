@@ -63,13 +63,21 @@ class MakeMKVClient
         #       Displays all drive data
         #   @param  dict    data    Data dict passed from server
         
-        _new_el = (id=false, class_=false) ->
-            div = document.createElement('div')
+        _new_el = (id=false, class_=false, parent=false, type_='div') ->
+            #   Create a new el
+            #   @param  str id      ID of el
+            #   @param  str class   Class of el
+            #   @param  obj parent  perform parent.appendChild(this)
+            #   @param  str type_   Type of element to create
+            #   @return obj 
+            el = document.createElement(type_)
             if id
-                div.id = id
+                el.id = id
             if class_
-                div.className = class_
-            div
+                el.className = class_
+            if parent
+                parent.appendChild(el)
+            el
         
         _new_disc_panel = (drive, disc_name, width) =>
             #   Create a new disc panel on UI
@@ -77,12 +85,17 @@ class MakeMKVClient
             #   @param  str disc_name   Disc ID
             #   @param  int width       Grid width of panel container
             #   @return DivElement
-            container = _new_el(false, 'col-md-' + width)
-            panel = _new_el(drive, 'panel panel-default')
-            title = _new_el(drive+ '-title', 'panel-title')
+            container = _new_el(false, 'col-lg-' + width)
+            panel = _new_el(drive, 'panel panel-default', container)
+            heading = _new_el(false, 'panel-heading', panel)
+            title = _new_el(drive + '-title', 'panel-title', heading)
             title.innerHTML = disc_name
-            panel.appendChild(title)
-            container.appendChild(panel)
+            body = _new_el(drive + '-body', 'panel-body', panel)
+            footer = _new_el(false, 'panel-footer', panel)
+            refresh_btn = _new_el(drive + '-refresh', 'btn btn-default', \
+                                  footer, 'button')
+            refresh_btn.setAttribute('type', 'button')
+            refresh_btn.innerHTML = 'Get Info'
             container
         
         main_div = document.getElementById('main')
@@ -101,7 +114,7 @@ class MakeMKVClient
     disc_info: (data) ->
         #   Callback for disc_info cmd
         #       Displays disc info in disc pane
-        disc_panel = $('#'+data['disc_id'])
+        disc_panel = document.getElementById(data['disc_id']+'-body')
         
     
     change_out_dir: (data) ->

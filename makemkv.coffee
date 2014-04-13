@@ -189,9 +189,19 @@ class MakeMKV
                         for col in line.split(@COL_PATTERN)[1..] by 2
                             split_line.push(col)
                             
+                        title_map = {} #< Map title #'s to m2ts
                         if split_line.length > 1 and split_line[0] != 'TCOUNT'
 
                             switch(line[0])
+                                
+                                when 'M' #< MSG
+                                    msg_id = split_line[0].split(':').pop()
+                                    
+                                    switch(msg_id)
+                                        
+                                        when '3307' #< Track added, capture m2ts name
+                                            matches = split_line[3].match(/(\d+\.m2ts) .*? #(\d)/)
+                                            title_map[matches[2]] = matches[1]
                                 
                                 when 'C' #< CINFO (Disc Info)
                                     attr_id = split_line[0].split(':').pop()
@@ -224,8 +234,11 @@ class MakeMKV
                                     ] = split_line.pop()[1..-2]
                                         
                     #   Count the track parts
-                    for track_id, track_info in info_out['data']['tracks']
-                        for part_id, track_part in track_info['track_parts']
+                    #   Had to do the .keys() because the obj lenghts are funky..
+                    for track_id in Object.keys(info_out['data']['tracks'])
+                        info_out['data']['tracks'][track_id]['m2ts'] = title_map[track_id]
+                        for part_id in Object.keys(info_out['data']['tracks'][track_id]['track_parts'])
+                            track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                             info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
                     
                     #   Release disc, set cache_refreshed, and return
@@ -277,12 +290,11 @@ class MakeMKV
                     drives #< Return
             )
 
-    _spawn_generic: (args, callback=false, path=undefined) =>
-        #   Generic MakeMKVCon Spawn
+    _spawn_generic: (args, callback=false, path=@MAKEMKVCON_PATH) =>
+        #   Generic Application Spawn
         #   @param  list    args    List of str arguments
         #   @param  funct   callback
-        if path == undefined
-            path = @MAKEMKVCON_PATH
+        #   @param  str     path to binary
             
         makemkv = spawn(path, args)
         return_ = []

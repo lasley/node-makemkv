@@ -25,10 +25,10 @@ class MakeMKVServer
     CLIENT_FILE: './client.html'
     SUCCESS_STRING: 'success'
     CLIENT_COFFEE: './client.coffee'
-    OUTPUT_DIR: '/media/Motherload/nodemkv'
 
     constructor: (port) ->
         @MakeMKV = new MakeMKV(@OUTPUT_DIR)
+        OUTPUT_DIR = @MakeMKV.SERVER_SETTINGS.output_dir
         server = http.createServer((req, res) =>
             req.setEncoding 'utf8'
             path = url.parse(req.url).pathname
