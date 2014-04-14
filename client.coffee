@@ -28,7 +28,6 @@ class MakeMKVClient
         @socket.on('change_out_dir', (data) => @change_out_dir(data))
         @socket.on('scan_drives', (data) => @scan_drives(data))
         @socket.on('disc_info', (data) => @disc_info(data))
-        @socket.on('disc_info', (data) => @save_out_dir(data))
         
         #   Socket debugging
         @socket.on('message', (data) =>
@@ -129,6 +128,7 @@ class MakeMKVClient
         
         data = socket_in['data']
         disc_panel = document.getElementById(data['disc_id']+'_body')
+        disc_panel.innerHTML = ''
         
         #   Form and form container
         form = @_new_el(false, 'form-horizontal', disc_panel, 'form')
@@ -159,7 +159,6 @@ class MakeMKVClient
             for attr in ['orig_fn', ] 
                 @_new_el(false, false, row, 'td').innerHTML = data['tracks'][track_id][attr]
                 
-        
     
     change_out_dir: (socket_in) ->
         #   Receive output dir and change on display

@@ -27,8 +27,7 @@ class MakeMKV
         @ATTRIBUTE_IDS = SERVER_SETTINGS.attibute_ids 
         @USER_SETTINGS = SERVER_SETTINGS.settings
         @MAKEMKVCON_PATH = @USER_SETTINGS.makemkvcon_path
-        
-        @COL_PATTERN = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
+
         # Chars not allowed on the filesystem
         @RESERVED_CHAR_MAP = { '/':'-', '\\':'-', '?':' ', '%':' ', '*':' ', \
                              ':':'-', '|':'-', '"':' ', '<':' ', '>':' ', }
@@ -39,7 +38,7 @@ class MakeMKV
         @busy_devices = {}
 
     get_busy: (disc_id, busy) =>
-        #   Determine which discs are being used
+        ##  Determine which discs are being used
         #   @param  int disc_id Disc ID
         #   @param  bol busy    
         if not disc_id
@@ -57,7 +56,7 @@ class MakeMKV
             true
             
     rip_track: (out_path, disc_id, track_ids, callback=false) =>
-        #   Rip a track to out_path (dir)
+        ##  Rip a track to out_path (dir)
         #   @param  str     out_path    Save dir
         #   @param  int     disc_id     Disc ID
         #   @param  list    track_ids   List of ints (track IDs) to rip
@@ -105,7 +104,7 @@ class MakeMKV
             false
             
     make_iso: (out_path, disc_id, callback=false) =>
-        #   Generate an ISO
+        ##  Generate an ISO
         #   @param  str out_path    Output dir
         #   @param  int disc_id     Disc Id
         #   @param  Callback function, will receive rip_output as param
@@ -139,25 +138,28 @@ class MakeMKV
             , 'mkisofs')
     
     disc_info: (disc_id, callback=false) =>
-        #   Get disc info
+        ##  Get disc info
         #   @param  int     disc_id     Disc ID
         #   @param  func    callback    Callback function, will receive info_out as param
         #   @return dict    info_out    Disc/track information
         if @get_busy(disc_id, true) #< If disc not busy, set busy and go
+            col_pattern = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
+            
             info_out = {'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, \
                         'cmd':'disc_info' }
             return_ = []
             errors = []
+            title_map = {} #< Map title #'s to m2ts
+            
             @_spawn_generic(['--noscan', '-r', 'info', 'dev:'+disc_id, ], (code, disc_info)=>
                 if code == 0
                     for line in disc_info
                         
                         #   Loop the line split by COL_PATTERN, take every 2 starting at index 1
                         split_line = []
-                        for col in line.split(@COL_PATTERN)[1..] by 2
+                        for col in line.split(col_pattern)[1..] by 2
                             split_line.push(col)
-                            
-                        title_map = {} #< Map title #'s to m2ts
+                
                         if split_line.length > 1 and split_line[0] != 'TCOUNT'
 
                             switch(line[0])
@@ -167,7 +169,8 @@ class MakeMKV
                                     
                                     switch(msg_id)
                                         
-                                        when '3307' #< Track added, capture m2ts name
+                                        when '3307' #< Track added, capture original name
+                                            #   2112.m2ts has been ... as #123
                                             matches = split_line[3].match(/(\d+\.[\w\d]+) .*? #(\d)/)
                                             title_map[matches[2]] = matches[1]
                                 
@@ -181,12 +184,12 @@ class MakeMKV
                                 when 'T' #< Track
                                     track_id = split_line[0].split(':').pop()
                                     if track_id not of info_out['data']['tracks']
-                                        track_info = info_out['data']['tracks'][track_id] = {
+                                        track_info = info_out['data']['tracks'][track_id] = { \
                                             'cnts':{'Subtitles':0, 'Video':0, 'Audio':0, } }
-                                        attr_id = split_line[1]
-                                        track_info[ \
-                                            if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
-                                        ] = split_line.pop()[1..-2]
+                                    attr_id = split_line[1]
+                                    track_info[ \
+                                        if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
+                                    ] = split_line.pop()[1..-2]
                                 
                                 when 'S' #< Track parts
                                     track_id = split_line[0].split(':').pop()
@@ -202,11 +205,10 @@ class MakeMKV
                                     ] = split_line.pop()[1..-2]
                                         
                     #   Count the track parts
-                    #   Had to do the .keys() because the obj lenghts are funky..
-                    for track_id in Object.keys(info_out['data']['tracks'])
+                    for track_id of info_out['data']['tracks']
                         info_out['data']['tracks'][track_id]['orig_fn'] = title_map[track_id]
                         
-                        for part_id in Object.keys(info_out['data']['tracks'][track_id]['track_parts'])
+                        for part_id of info_out['data']['tracks'][track_id]['track_parts']
                             track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                             info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
                     
@@ -229,7 +231,7 @@ class MakeMKV
             false
             
     sanitize_name: (disc_info) ->
-        #   Sanitize a disc name, title case, Plex compat, etc.
+        ##  Sanitize a disc name, title case, Plex compat, etc.
         #   @param  dict    disc_info   Disc info dict, at least one: [Name, Tree Info, Volume Name]
         #   @param  func    callback    Callback function, will receive drives as param
         
@@ -238,7 +240,7 @@ class MakeMKV
 
 
     scan_drives: (callback=false) =>
-        #   Scan drives, return info. Also sets @drive_map
+        ##  Scan drives, return info. Also sets @drive_map
         #   @param  func    callback Callback function, will receive drives as param
         #   @return dict    drives  Dict keyed by drive index, value is movie name
         if @get_busy(false, true) #< Make sure none of the discs are busy
@@ -267,7 +269,7 @@ class MakeMKV
             )
 
     _spawn_generic: (args, callback=false, path=@MAKEMKVCON_PATH) =>
-        #   Generic Application Spawn
+        ##  Generic Application Spawn
         #   @param  list    args    List of str arguments
         #   @param  funct   callback
         #   @param  str     path to binary
@@ -290,7 +292,7 @@ class MakeMKV
         )
 
     _mk_dir: (dir) =>
-        #   Create dir if not exists
+        ##  Create dir if not exists
         #   @param  str dir Directory to create
         #   @return mixed   false if failed, otherwise new dir
         dir = @_sanitize_fn(dir)
@@ -306,7 +308,7 @@ class MakeMKV
         return dir
 
     _sanitize_fn: (out_path) =>
-        #   Remove reserved characters from file name
+        ##  Remove reserved characters from file name
         #   @param  file_path   str File path (will sanitize last part)
         #   @return str sanitized
         file_path = file_path.split('/')

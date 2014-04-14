@@ -102,7 +102,7 @@ class MakeMKVServer
         )
         
     display_cache: (callback=false) =>
-        #   Send cached data to client in logic order
+        ##  Send cached data to client in logic order
         #       scan_drives, disc_info, rip_track
         
         cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip']
@@ -120,7 +120,7 @@ class MakeMKVServer
             cached
             
     do_emit: (socket, msg) ->
-        #   Signal emit
+        ##  Signal emit
         #   @param  socket  socket  socket
         #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
         
@@ -136,7 +136,7 @@ class MakeMKVServer
         socket.sockets.emit(cmd, data)
         
     _cache_data: (cmd, data, namespace='none') =>
-        #   Cache data to variable for when clients join
+        ##  Cache data to variable for when clients join
         #   @param  str     cmd     Command that will be emitted
         #   @param  mixed   data    Data obj
         #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
@@ -150,11 +150,11 @@ class MakeMKVServer
         @cache[cmd][namespace]
     
     change_out_dir: () =>
-        #   Register change to save directory (UI)
+        ##  Register change to save directory (UI)
         @_cache_data('change_out_dir', @MakeMKV.save_to)
     
     save_out_dir: (dir, callback=false) =>
-        #   Save change to save directory
+        ##  Save change to save directory
         #   @param  str dir New save dir
         
         @MakeMKV.save_to = dir

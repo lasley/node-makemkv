@@ -34,10 +34,11 @@ class SanitizeTitles
         ##  Format season information to Sanitized S#D#E#
         #   @param  Dict    season_information  as returned by volume_info
         #   @param  Bool    include_disc_num    include disc in out
+        season_out = []
         
         
     strip_spaces: (str_in, callback=false) =>
-        #   Turn all SPACE_CHARS into spaces, multiples into singles
+        ##  Turn all SPACE_CHARS into spaces, multiples into singles
         #
         #   @param  Str string_in   input string
         #   @return Str Sanitized String
@@ -48,7 +49,7 @@ class SanitizeTitles
             str_
         
     title_case: (str_in, callback=false) =>
-        #   Make string title case & move leading `the` to end with a comma.
+        ##  Make string title case & move leading `the` to end with a comma.
         #   Also .upper() Roman Numerals
         #
         #   @param  Str string_in   String in
