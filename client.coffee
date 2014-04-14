@@ -24,10 +24,13 @@ class MakeMKVClient
             @socket.emit('display_cache', true)
         )
         
-        #   Receive/process socket cmds
-        @socket.on('change_out_dir', (data) => @change_out_dir(data))
-        @socket.on('scan_drives', (data) => @scan_drives(data))
-        @socket.on('disc_info', (data) => @disc_info(data))
+        #   Bind to receive/process socket cmds
+        actions = {'change_out_dir': @change_out_dir, \
+                    'save_out_dir': @save_out_dir, \
+                    'scan_drives': @scan_drives, \
+                    'disc_info': @disc_info, }
+        for action of actions
+            @socket.on(action, (data)=> actions[action](data))
         
         #   Socket debugging
         @socket.on('message', (data) =>

@@ -34,10 +34,7 @@ class MakeMKV
                              ':':'-', '|':'-', '"':' ', '<':' ', '>':' ', }
         @PERMISSIONS = {'file':'0666', 'dir':'0777'} #< New file and dir permissions
         
-        
-        if not save_to
-            save_to = @USER_SETTINGS.output_dir
-        @change_out_dir(save_to)
+        @save_to = if save_to then save_to else @USER_SETTINGS.output_dir
         
         @busy_devices = {}
 
