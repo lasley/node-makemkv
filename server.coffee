@@ -30,9 +30,9 @@ class MakeMKVServer
         
         @MakeMKV = new MakeMKV(false)
         @cache = {}
+        @change_out_dir() #< Prime the out dir cache
         
         server = http.createServer((req, res) =>
-            @change_out_dir() #< Prime the out dir cache
             req.setEncoding 'utf8'
             path = url.parse(req.url).pathname
             if req.method == 'POST'
@@ -126,6 +126,10 @@ class MakeMKVServer
         
         cmd = msg['cmd']
         data = msg['data']
+        
+        if data['data'] #< If there's a second data dimension (cached)
+            data = data['data'] #< Pull and save it instead
+            
         namespace = if data['disc_id'] then data['disc_id'] else 'none'
         data = @_cache_data(cmd, data, namespace)
         console.log(data)
@@ -141,8 +145,7 @@ class MakeMKVServer
         if typeof(@cache[cmd]) != 'object'
             @cache[cmd] = {}
 
-        @cache[cmd][namespace] = {'cache_refreshed': new Date(), \
-                                           'data': data }
+        @cache[cmd][namespace] = {'cache_refreshed': new Date(), 'data': data }
         
         @cache[cmd][namespace]
     

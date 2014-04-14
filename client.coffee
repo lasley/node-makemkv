@@ -25,12 +25,10 @@ class MakeMKVClient
         )
         
         #   Bind to receive/process socket cmds
-        actions = {'change_out_dir': @change_out_dir, \
-                    'save_out_dir': @save_out_dir, \
-                    'scan_drives': @scan_drives, \
-                    'disc_info': @disc_info, }
-        for action of actions
-            @socket.on(action, (data)=> actions[action](data))
+        @socket.on('change_out_dir', (data) => @change_out_dir(data))
+        @socket.on('scan_drives', (data) => @scan_drives(data))
+        @socket.on('disc_info', (data) => @disc_info(data))
+        @socket.on('disc_info', (data) => @save_out_dir(data))
         
         #   Socket debugging
         @socket.on('message', (data) =>
@@ -77,12 +75,12 @@ class MakeMKVClient
             parent.appendChild(el)
         el
     
-    scan_drives: (data_in) =>
+    scan_drives: (socket_in) =>
         #   Callback for scan_drives cmd
         #       Displays all drive data
-        #   @param  dict    data_in  Data dict passed from server
+        #   @param  dict    socket_in  Data dict passed from server
         
-        data = data_in['data']
+        data = socket_in['data']
         
         _new_disc_panel = (drive, disc_name, width) =>
             #   Create a new disc panel on UI
@@ -125,11 +123,11 @@ class MakeMKVClient
             #if disc #< Get extended disc info only if there's a disc
             #    @_socket_cmd('disc_info', drive)
             
-    disc_info: (data_in) =>
+    disc_info: (socket_in) =>
         #   Callback for disc_info cmd
         #       Displays disc info in disc pane
         
-        data = data_in['data']
+        data = socket_in['data']
         disc_panel = document.getElementById(data['disc_id']+'_body')
         
         #   Form and form container
@@ -144,14 +142,12 @@ class MakeMKVClient
         
         #   Input container and input
         input_div = @_new_el(false, 'col-sm-10', form_div)
-        input_el = @_new_el(data['disc_id'] + '_name', 'form-control', \
-                            input_div, 'input')
+        input_el = @_new_el(data['disc_id'] + '_name', 'form-control', input_div, 'input')
         input_el.setAttribute('placeholder', data['disc']['Sanitized'])
         input_el.setAttribute('value', data['disc']['Sanitized'])
         
         #   Table for all the tracks
-        table = @_new_el(false, 'table table-bordered table-condensed', \
-                         disc_panel, 'table')
+        table = @_new_el(false, 'table table-bordered table-condensed', disc_panel, 'table')
         
         #   Disc info headers
         headers = ['#', ]
@@ -165,9 +161,9 @@ class MakeMKVClient
                 
         
     
-    change_out_dir: (data) ->
+    change_out_dir: (socket_in) ->
         #   Receive output dir and change on display
-        #   @param  dict    data    Data dict passed from server
-        document.getElementById('output_dir').value = data['data']
+        #   @param  dict    socket_in    Data dict passed from server
+        document.getElementById('output_dir').value = socket_in['data']
         
 client = new MakeMKVClient()
