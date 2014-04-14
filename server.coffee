@@ -22,13 +22,13 @@ MakeMKV = require('./makemkv.coffee')
 
 class MakeMKVServer
 
-    CLIENT_FILE: './client.html'
+    CLIENT_FILE: __dirname + '/client.html'
     SUCCESS_STRING: 'success'
-    CLIENT_COFFEE: './client.coffee'
+    CLIENT_COFFEE: __dirname + '/client.coffee'
 
     constructor: (port) ->
-        @MakeMKV = new MakeMKV(@OUTPUT_DIR)
-        OUTPUT_DIR = @MakeMKV.SERVER_SETTINGS.output_dir
+        @MakeMKV = new MakeMKV(false)
+        @cache = {}
         server = http.createServer((req, res) =>
             req.setEncoding 'utf8'
             path = url.parse(req.url).pathname
@@ -66,7 +66,7 @@ class MakeMKVServer
                 #   Send cache to client
                 multi_broadcast = (msgs)=>
                     for msg in msgs 
-                        @do_emit(socket, msg)
+                        single_broadcast(msg)
                 @MakeMKV.display_cache(multi_broadcast)
             )
             
@@ -97,6 +97,23 @@ class MakeMKVServer
             )
             
         )
+        
+    display_cache: (callback=false) =>
+        #   Send cached data to client in logic order
+        #       scan_drives, disc_info, rip_track
+        cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip']
+        cached = []
+        for cmd in cmd_order
+            if typeof(@cache[cmd]) == 'object'
+                for namespace of @cache[cmd]
+                    cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
+        
+        console.log(cached)
+        
+        if callback
+            callback(cached)
+        else
+            cached
             
     do_emit: (socket, msg) ->
         #   Signal emit
@@ -104,8 +121,33 @@ class MakeMKVServer
         #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
         cmd = msg['cmd']
         data = msg['data']
+        namespace = if data['disc_id'] then data['disc_id'] else 'none'
+        data = @_cache_data(cmd, data, namespace)
         console.log(data)
         socket.sockets.emit(cmd, data)
+        
+    _cache_data: (cmd, data, namespace=false) =>
+        #   Cache data to variable for when clients join
+        #   @param  dict    data    Data obj, must contain keys `cmd`, `data`
+        #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
+        #   @return mixed   return `data` key of input with cache_refreshed date
+        
+        if typeof(@cache[data['cmd']]) != 'object'
+            @cache[data['cmd']] = {}
+
+        @cache[data['cmd']][namespace] = {'cache_refreshed': new Date(), \
+                                           'data': data['data'] }
+
+        @cache[data['cmd']][namespace]
+    
+    change_out_dir: (dir, callback=false) =>
+        #   Register change to save directory
+        @MakeMKV.save_to = dir
+        @cache_data({'cmd':'change_out_dir', 'data':@MakeMKV.save_to})
+        if callback
+            callback(@MakeMKV.save_to)
+        else
+            @MakeMKV.save_to
         
         
 server = new MakeMKVServer(1337)

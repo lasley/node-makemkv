@@ -41,7 +41,7 @@ class MakeMKVClient
         if bind
             @_bind()
             
-    _bind: () ->
+    _bind: () =>
         #   Bind client events
         $('#send_out_dir').on('click', (event) =>
             new_dir = $('#output_dir').val()
@@ -57,27 +57,29 @@ class MakeMKVClient
         #   @param  str     cmd     Command that is being performed
         #   @param  mixed   data    Data to send
         @socket.emit(cmd, data)
-        
-    scan_drives: (data) =>
+    
+    _new_el: (id=false, class_=false, parent=false, type_='div') ->
+        #   Create a new el
+        #   @param  str id      ID of el
+        #   @param  str class   Class of el
+        #   @param  obj parent  perform parent.appendChild(this)
+        #   @param  str type_   Type of element to create
+        #   @return obj 
+        el = document.createElement(type_)
+        if id
+            el.id = id
+        if class_
+            el.className = class_
+        if parent
+            parent.appendChild(el)
+        el
+    
+    scan_drives: (data_in) =>
         #   Callback for scan_drives cmd
         #       Displays all drive data
-        #   @param  dict    data    Data dict passed from server
+        #   @param  dict    data_in  Data dict passed from server
         
-        _new_el = (id=false, class_=false, parent=false, type_='div') ->
-            #   Create a new el
-            #   @param  str id      ID of el
-            #   @param  str class   Class of el
-            #   @param  obj parent  perform parent.appendChild(this)
-            #   @param  str type_   Type of element to create
-            #   @return obj 
-            el = document.createElement(type_)
-            if id
-                el.id = id
-            if class_
-                el.className = class_
-            if parent
-                parent.appendChild(el)
-            el
+        data = data_in['data']
         
         _new_disc_panel = (drive, disc_name, width) =>
             #   Create a new disc panel on UI
@@ -85,17 +87,26 @@ class MakeMKVClient
             #   @param  str disc_name   Disc ID
             #   @param  int width       Grid width of panel container
             #   @return DivElement
-            container = _new_el(false, 'col-lg-' + width)
-            panel = _new_el(drive, 'panel panel-default', container)
-            heading = _new_el(false, 'panel-heading', panel)
-            title = _new_el(drive + '-title', 'panel-title', heading)
+            container = @_new_el(false, 'col-lg-' + width)
+            panel = @_new_el(drive, 'panel panel-default', container)
+            heading = @_new_el(false, 'panel-heading', panel)
+            
+            title = @_new_el(drive + '_title', 'panel-title', heading)
             title.innerHTML = disc_name
-            body = _new_el(drive + '-body', 'panel-body', panel)
-            footer = _new_el(false, 'panel-footer', panel)
-            refresh_btn = _new_el(drive + '-refresh', 'btn btn-default', \
+            
+            body = @_new_el(drive + '_body', 'panel-body', panel)
+            footer = @_new_el(false, 'panel-footer', panel)
+            
+            refresh_btn = @_new_el(false, 'btn btn-default disc-info-btn', \
                                   footer, 'button')
+            refresh_btn.setAttribute('data-drive-id', drive)
             refresh_btn.setAttribute('type', 'button')
             refresh_btn.innerHTML = 'Get Info'
+            refresh_btn.addEventListener('click', (event) =>
+                drive_id = event.currentTarget.getAttribute('data-drive-id')
+                @_socket_cmd('disc_info', drive_id)
+            )
+            
             container
         
         main_div = document.getElementById('main')
@@ -108,18 +119,52 @@ class MakeMKVClient
             console.log(drive)
             disc = data[drive]
             main_div.appendChild(_new_disc_panel(drive, disc, col_width))
-            if disc #< Get extended disc info only if there's a disc
-                @_socket_cmd('disc_info', drive)
+            #if disc #< Get extended disc info only if there's a disc
+            #    @_socket_cmd('disc_info', drive)
             
-    disc_info: (data) ->
+    disc_info: (data_in) =>
         #   Callback for disc_info cmd
         #       Displays disc info in disc pane
-        disc_panel = document.getElementById(data['disc_id']+'-body')
+        
+        data = data_in['data']
+        disc_panel = document.getElementById(data['disc_id']+'_body')
+        
+        #   Form and form container
+        form = @_new_el(false, 'form-horizontal', disc_panel, 'form')
+        form.setAttribute('role', 'form')
+        form_div = @_new_el(false, 'form-group', form)
+        
+        #   Label for input
+        label = @_new_el(false, 'col-sm-2 control-label', form_div, 'label')
+        label.setAttribute('for', data['disc_id'] + '_name')
+        label.innerHTML = 'Disc Name'
+        
+        #   Input container and input
+        input_div = @_new_el(false, 'col-sm-10', form_div)
+        input_el = @_new_el(data['disc_id'] + '_name', 'form-control', \
+                            input_div, 'input')
+        input_el.setAttribute('placeholder', data['disc']['Sanitized'])
+        input_el.setAttribute('value', data['disc']['Sanitized'])
+        
+        #   Table for all the tracks
+        table = @_new_el(false, 'table table-bordered table-condensed', \
+                         disc_panel, 'table')
+        
+        #   Disc info headers
+        headers = ['#', ]
+        
+        for track_id of data['tracks']
+            row = @_new_el(false, false, table, 'tr')
+            col = @_new_el(false, false, row, 'td')
+            col.innerHTML = track_id
+            for attr in ['orig_fn', ] 
+                @_new_el(false, false, row, 'td').innerHTML = data['tracks'][track_id][attr]
+                
         
     
     change_out_dir: (data) ->
         #   Receive output dir and change on display
         #   @param  dict    data    Data dict passed from server
-        document.getElementById('output_dir').value = data
+        document.getElementById('output_dir').value = data['data']
         
 client = new MakeMKVClient()
