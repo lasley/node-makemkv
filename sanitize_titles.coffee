@@ -15,7 +15,6 @@ xml2js = require 'xml2js'
 class SanitizeTitles
 
     constructor: () ->
-        @DIR_HIERARCHY = ['season', 'disc', 'episode']
         @RESERVED_CHAR_MAP = { '/':'-', '\\':'-', '?':' ', '%':' ', '*':' ',
                                ':':'-', '|':'-', '"':' ', '<':' ', '>':' ', }
                                
@@ -30,14 +29,18 @@ class SanitizeTitles
                 @NO_UPPERCASE = globals['no_upper']
         )
         
-    format_season: (season_info, inc_disc_num=false)
+    format_season: (season_info, inc_disc_num=false) ->
         ##  Format season information to Sanitized S#D#E#
         #   @param  Dict    season_information  as returned by volume_info
         #   @param  Bool    include_disc_num    include disc in out
+        DIR_HIERARCHY = ['season', 'disc', 'episode']
         season_out = []
+            
+        for type_ in DIR_HIERARCHY
+            
         
         
-    strip_spaces: (str_in, callback=false) =>
+    strip_spaces: (str_in, callback=false) ->
         ##  Turn all SPACE_CHARS into spaces, multiples into singles
         #
         #   @param  Str string_in   input string
@@ -48,7 +51,7 @@ class SanitizeTitles
         else
             str_
         
-    title_case: (str_in, callback=false) =>
+    title_case: (str_in, callback=false) ->
         ##  Make string title case & move leading `the` to end with a comma.
         #   Also .upper() Roman Numerals
         #

@@ -20,9 +20,11 @@ class MakeMKV
 
     constructor: (save_to) -> 
         @NEWLINE_CHAR = '\n'
+        @COL_PATTERN = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
         
         SETTINGS_PATH = __dirname + '/server_settings.ini'
         SERVER_SETTINGS = ini.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
+        
         @SELECTION_PROFILE = SERVER_SETTINGS.selection_profile
         @ATTRIBUTE_IDS = SERVER_SETTINGS.attibute_ids 
         @USER_SETTINGS = SERVER_SETTINGS.settings
@@ -36,11 +38,18 @@ class MakeMKV
         @save_to = if save_to then save_to else @USER_SETTINGS.output_dir
         
         @busy_devices = {}
-
+    
+    choose_tracks: (disc_info, callback=false) ->
+        ##  Choose the tracks that should be autoselected
+        #   @param  dict    disc_info   As returned in @disc_info()
+        #   @return dict    disd_info with injected `autoselect` key in every track (bool)
+        
+    
     get_busy: (disc_id, busy) =>
         ##  Determine which discs are being used
-        #   @param  int disc_id Disc ID
-        #   @param  bol busy    
+        #   @param  int  disc_id Disc ID
+        #   @param  bool busy
+        #   @return bool Is the drive (or any if no disc_id) busy
         if not disc_id
             @busy_devices['all'] = busy
             {
@@ -55,10 +64,10 @@ class MakeMKV
             @busy_devices[disc_id] = busy #< gtg
             true
             
-    rip_track: (out_path, disc_id, track_ids, callback=false) =>
-        ##  Rip a track to out_path (dir)
-        #   @param  str     out_path    Save dir
-        #   @param  int     disc_id     Disc ID
+    rip_track: (save_dir, disc_id, track_ids, callback=false) =>
+        ##  Rip a track to save_dir (dir)
+        #   @param  str     save_dir    Folder to save files in
+        #   @param  int     disc_id     Drive ID
         #   @param  list    track_ids   List of ints (track IDs) to rip
         #   @param  func    callback    Callback function, will receive return var as param
         #   @return dict    Rip success? Keyed by track ID
@@ -81,7 +90,7 @@ class MakeMKV
                     ripped_tracks #< Return
 
             @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
-                            'dev:'+disc_id, track_id, out_path, ], (code, data) =>
+                            'dev:'+disc_id, track_id, save_dir, ], (code, data) =>
                 if code == 0
                     if indexOf('1 titles saved.') != -1
                         ripped_tracks['data'][track_id] = true
@@ -96,55 +105,19 @@ class MakeMKV
             )
         
         if @get_busy(disc_id, true) #< If disc not busy, set busy and go
-            out_path = @_mk_dir(out_path)
-            if not out_path
+            save_dir = @_mk_dir(save_dir)
+            if not save_dir
                 return_false()
             recurse_tracks(track_ids, ripped_tracks, recurse_tracks)
         else
             false
             
-    make_iso: (out_path, disc_id, callback=false) =>
-        ##  Generate an ISO
-        #   @param  str out_path    Output dir
-        #   @param  int disc_id     Disc Id
-        #   @param  Callback function, will receive rip_output as param
-        #   @return dict    rip_output
-        if @get_busy(disc_id, true) #< If disc not busy, set busy and go
-            out_path = @_mk_dir(out_path)
-            if not out_path
-                return false
-            rip_output = {'data':{'disc_id':disc_id, 'out_file':out_path+'.iso',}, \
-                            'cmd':'iso', }
-            #   Spawn MakeMKV, backup to defined folder
-            @_spawn_generic(['--noscan', 'backup', '--cache=256', '--decrypt', 'disc:',
-                             @drive_map[disc_id], out_path], (code, data) =>
-                if code == 0
-                    @_spawn_generic(['-J', '-r', '-allow-limited-size', '-iso-level', '3', 
-                                     '-udf', '-o', rip_output['data']['out_file'], out_path], (code, data) =>
-                        if code == 0
-                            #   @todo - Delete the tree
-                            @get_busy(disc_id)
-
-                            if callback
-                                callback(data)
-                            else
-                                data #< return
-                    )
-                else
-                    # If it gets here, there was a problem somewhere
-                    @get_busy(disc_id)
-                    console.log(sprintf('ERROR:\nreturn:"%s"\nlatest code%d',
-                                        data, code))
-            , 'mkisofs')
-    
     disc_info: (disc_id, callback=false) =>
         ##  Get disc info
         #   @param  int     disc_id     Disc ID
         #   @param  func    callback    Callback function, will receive info_out as param
         #   @return dict    info_out    Disc/track information
         if @get_busy(disc_id, true) #< If disc not busy, set busy and go
-            col_pattern = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
-            
             info_out = {'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, \
                         'cmd':'disc_info' }
             return_ = []
@@ -157,7 +130,7 @@ class MakeMKV
                         
                         #   Loop the line split by COL_PATTERN, take every 2 starting at index 1
                         split_line = []
-                        for col in line.split(col_pattern)[1..] by 2
+                        for col in line.split(@COL_PATTERN)[1..] by 2
                             split_line.push(col)
                 
                         if split_line.length > 1 and split_line[0] != 'TCOUNT'
@@ -167,12 +140,12 @@ class MakeMKV
                                 when 'M' #< MSG
                                     msg_id = split_line[0].split(':').pop()
                                     
-                                    switch(msg_id)
-                                        
-                                        when '3307' #< Track added, capture original name
-                                            #   2112.m2ts has been ... as #123
-                                            matches = split_line[3].match(/(\d+\.[\w\d]+) .*? #(\d)/)
-                                            title_map[matches[2]] = matches[1]
+                                    #switch(msg_id)
+                                    #    
+                                    #    when '3307' #< Track added, capture original name
+                                    #        #   2112.m2ts has been ... as #123
+                                    #        matches = split_line[3].match(/(\d+\.[\w\d]+) .*? #(\d)/)
+                                    #        title_map[matches[2]] = matches[1]
                                 
                                 when 'C' #< CINFO (Disc Info)
                                     attr_id = split_line[0].split(':').pop()
@@ -204,10 +177,8 @@ class MakeMKV
                                         if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
                                     ] = split_line.pop()[1..-2]
                                         
-                    #   Count the track parts
+                    #   Count the track parts (Audio/Video/Subtitle)
                     for track_id of info_out['data']['tracks']
-                        info_out['data']['tracks'][track_id]['orig_fn'] = title_map[track_id]
-                        
                         for part_id of info_out['data']['tracks'][track_id]['track_parts']
                             track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                             info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
@@ -296,25 +267,35 @@ class MakeMKV
         #   @param  str dir Directory to create
         #   @return mixed   false if failed, otherwise new dir
         dir = @_sanitize_fn(dir)
+        
         try
             stats = fs.lstatSync(dir)
+            
             if not stats.isDirectory() #< Path exists, but is normal file
                 return false
+            
         catch e #< Dir doesn't exist
+            
             try
                 fs.mkdirSync(dir, @PERMISSIONS['dir'])
             catch e #< Failed to make dir
                 return false
-        return dir
+            
+        dir
 
     _sanitize_fn: (out_path) =>
         ##  Remove reserved characters from file name
         #   @param  file_path   str File path (will sanitize last part)
         #   @return str sanitized
-        file_path = file_path.split('/')
-        for key, val in @RESERVED_CHAR_MAP
-            file_path[-1] = file_path[-1].replace(key, val)
-        file.path.join('/') #< Return
+        
+        fp = out_path.split('/')
+        
+        for key of @RESERVED_CHAR_MAP
+            fp[fp.length - 1] = fp[fp.length - 1].replace(key, @RESERVED_CHAR_MAP[key])
+        
+        console.log(fp.join('/'))
+        
+        fp.join('/') 
         
         
 module.exports = MakeMKV

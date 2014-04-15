@@ -28,6 +28,7 @@ class MakeMKVClient
         @socket.on('change_out_dir', (data) => @change_out_dir(data))
         @socket.on('scan_drives', (data) => @scan_drives(data))
         @socket.on('disc_info', (data) => @disc_info(data))
+        @socket.on('rip_track', (data) => console.log(data))
         
         #   Socket debugging
         @socket.on('message', (data) =>
@@ -58,20 +59,30 @@ class MakeMKVClient
         #   @param  mixed   data    Data to send
         @socket.emit(cmd, data)
     
-    _new_el: (id=false, class_=false, parent=false, type_='div') ->
+    _new_el: (parent=false, class_=false, type_='div', kwargs={}) ->
         #   Create a new el
-        #   @param  str id      ID of el
-        #   @param  str class   Class of el
         #   @param  obj parent  perform parent.appendChild(this)
+        #   @param  str class_  Class of el
         #   @param  str type_   Type of element to create
+        #   @param  obj kwargs  Dict of attrs to set
         #   @return obj 
-        el = document.createElement(type_)
-        if id
-            el.id = id
+        el = $('<' + type_ + '></' + type_ + '>')
+        
         if class_
-            el.className = class_
+            el.addClass(class_)
+            
         if parent
-            parent.appendChild(el)
+            #   Handle both jQuery and non
+            if parent.append 
+                parent.append(el)
+            else
+                $(parent).append(el)
+        
+        for attr of kwargs
+            switch(attr)
+                when 'html' then el.html(kwargs[attr])
+                else el.attr(attr, kwargs[attr])
+        
         el
     
     scan_drives: (socket_in) =>
@@ -88,29 +99,58 @@ class MakeMKVClient
             #   @param  int width       Grid width of panel container
             #   @return DivElement
             container = @_new_el(false, 'col-lg-' + width)
-            panel = @_new_el(drive, 'panel panel-default', container)
-            heading = @_new_el(false, 'panel-heading', panel)
+            panel = @_new_el(container, 'panel panel-default', 'div', {id:drive})
+            heading = @_new_el(panel, 'panel-heading')
+            header_container = @_new_el(heading)
             
-            title = @_new_el(drive + '_title', 'panel-title', heading)
-            title.innerHTML = disc_name
+            title = @_new_el(header_container, 'panel-title', 'div', {
+                html:disc_name, id:drive + '_title'
+            })
             
-            body = @_new_el(drive + '_body', 'panel-body', panel)
-            footer = @_new_el(false, 'panel-footer', panel)
+            #   `-`/`+` glyph
+            glyph = @_new_el(header_container, 'glyphicon glyphicon-minus', 'span',
+                             {'cursor':'pointer'})
+            glyph.on('click', (event) => @_panel_collapse(panel))
+
+            body = @_new_el(panel, 'panel-body', 'div', {id:drive + '_body'})
+            footer = @_new_el(panel, 'panel-footer', 'div')
             
-            refresh_btn = @_new_el(false, 'btn btn-default disc-info-btn', \
-                                  footer, 'button')
-            refresh_btn.setAttribute('data-drive-id', drive)
-            refresh_btn.setAttribute('type', 'button')
-            refresh_btn.innerHTML = 'Get Info'
-            refresh_btn.addEventListener('click', (event) =>
+            #   Get Disc Info Button
+            refresh_btn = @_new_el(
+                footer, 'btn btn-default disc-info-btn get-info', 'button', {
+                    'data-drive-id':drive, 'type':'button', html:'Get Info',
+            })
+            refresh_btn.on('click', (event) =>
                 drive_id = event.currentTarget.getAttribute('data-drive-id')
                 @_socket_cmd('disc_info', drive_id)
             )
             
+            #   Rip Tracks Button
+            rip_btn = @_new_el(
+                footer, 'btn btn-default disc-info-btn hidden rip-tracks', 'button', {
+                    'data-drive-id':drive, 'type':'button', html:'Rip Tracks',
+            })
+            rip_btn.on('click', (event) =>
+                
+                drive_id = event.currentTarget.getAttribute('data-drive-id')
+                panel = $(document.getElementById(drive_id))
+                save_dir = document.getElementById('/dev/sr3_name').value
+                
+                checked_boxes = []
+                for check in panel.find('[type=checkbox]')
+                    if check.checked
+                        checked_boxes.append(check.getAttribute('data-track-id'))
+                    
+                @_socket_cmd('rip_track', {
+                    'save_dir':save_dir, 'drive_id':drive_id,
+                    'track_ids':checked_boxes
+                })
+            )
+            
             container
         
-        main_div = document.getElementById('main')
-        main_div.innerHTML = ''
+        main_div = $('#main')
+        main_div.html('')
         
         #   Have to extract keys because the obj doesn't have a len
         data_keys = Object.keys(data)
@@ -118,7 +158,7 @@ class MakeMKVClient
         for drive in data_keys
             console.log(drive)
             disc = data[drive]
-            main_div.appendChild(_new_disc_panel(drive, disc, col_width))
+            main_div.append(_new_disc_panel(drive, disc, col_width))
             #if disc #< Get extended disc info only if there's a disc
             #    @_socket_cmd('disc_info', drive)
             
@@ -127,42 +167,90 @@ class MakeMKVClient
         #       Displays disc info in disc pane
         
         data = socket_in['data']
-        disc_panel = document.getElementById(data['disc_id']+'_body')
-        disc_panel.innerHTML = ''
+        
+        #   Get Disc panel body and clear it
+        disc_panel = $(document.getElementById(data['disc_id'] + '_body'))
+        disc_panel.html('')
         
         #   Form and form container
-        form = @_new_el(false, 'form-horizontal', disc_panel, 'form')
-        form.setAttribute('role', 'form')
-        form_div = @_new_el(false, 'form-group', form)
+        form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
+        form_div = @_new_el(form, 'form-group')
         
         #   Label for input
-        label = @_new_el(false, 'col-sm-2 control-label', form_div, 'label')
-        label.setAttribute('for', data['disc_id'] + '_name')
-        label.innerHTML = 'Disc Name'
+        label = @_new_el(form_div, 'col-sm-2 control-label', 'label', { 
+            'for':data['disc_id'] + '_name', html: 'Disc Name'
+        })
         
         #   Input container and input
-        input_div = @_new_el(false, 'col-sm-10', form_div)
-        input_el = @_new_el(data['disc_id'] + '_name', 'form-control', input_div, 'input')
-        input_el.setAttribute('placeholder', data['disc']['Sanitized'])
-        input_el.setAttribute('value', data['disc']['Sanitized'])
+        input_div = @_new_el(form_div, 'col-sm-10')
+        input_el = @_new_el(input_div, 'form-control', 'input', {
+            placeholder:data['disc']['Sanitized'], value:data['disc']['Sanitized'],
+            id:data['disc_id'] + '_name'
+        })
         
-        #   Table for all the tracks
-        table = @_new_el(false, 'table table-bordered table-condensed', disc_panel, 'table')
+        #   Table for all the tracks (and the responsive container for it)
+        tbl_cont = @_new_el(disc_panel, 'table-responsive')
+        table = @_new_el(tbl_cont, 'table', 'table table-bordered ' + \
+                         'table-condensed table-hover')
         
-        #   Disc info headers
-        headers = ['#', ]
+        #   Disc info header map and loop
+        headers = {
+            'Rip':false, '#':false, 'Source':'Source File Name', 
+            'Chptrs':'Chapter Count', 'Size':'Disk Size', 'Track Types':'_ttypes',
+            'S-Map':'Segments Map',
+        }
         
+        row = @_new_el(table, false, 'tr')
+        for header of headers
+            col = @_new_el(row, false, 'th', {html:header})
+        
+        #   Loop tracks, display data
         for track_id of data['tracks']
-            row = @_new_el(false, false, table, 'tr')
-            col = @_new_el(false, false, row, 'td')
-            col.innerHTML = track_id
-            for attr in ['orig_fn', ] 
-                @_new_el(false, false, row, 'td').innerHTML = data['tracks'][track_id][attr]
-                
-    
+            
+            #   Initial row, track #, checkboxes
+            track_data = data['tracks'][track_id]
+            row = @_new_el(table, false, 'tr')
+            
+            col = @_new_el(row, false, 'td')
+            @_new_el(col, false, 'input', {
+                type:'checkbox', 'data-track-id':track_id, 
+                'data-autochecked':track_data['autochk']
+            })
+            
+            col = @_new_el(row, false, 'td', {html:track_id})
+            
+            #   Fill Track Type Cnts
+            track_cnts = track_data['cnts']
+            cnt_key_order = ['Video', 'Audio', 'Subtitles']
+            for key in cnt_key_order
+                track_data['_ttypes'] = '<em>' + key + ':</em> ' + track_cnts[key]
+            
+            #   Loop the rest of the cols
+            for header of headers
+                if headers[header]
+                    col_data = track_data[headers[header]]
+                    @_new_el(row, false, 'td', {html:col_data})
+                    
+        #   Un-hide Rip Button
+        panel = $(document.getElementById(data['disc_id']))
+        $(panel.find('.rip-tracks')[0]).removeClass('hidden')
+        
+
     change_out_dir: (socket_in) ->
         #   Receive output dir and change on display
         #   @param  dict    socket_in    Data dict passed from server
+        
         document.getElementById('output_dir').value = socket_in['data']
+        
+    _panel_collapse: (panel) ->
+        ##  UI function to (un)collapse panel
+        #   @param  obj panel   Bootstrap3 Panel obj
+        panel = $(panel)
+        body = $(panel.children('.panel-body')[0])
+        glyph =  $(panel.find('.glyphicon')[0])
+        
+        body.toggleClass('hidden')
+        glyph.toggleClass('glyphicon-minus')
+        glyph.toggleClass('glyphicon-plus')
         
 client = new MakeMKVClient()

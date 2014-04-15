@@ -43,14 +43,17 @@ class MakeMKVServer
                 )
             else
                 switch path
+                    
                     when '/' #< Serve static client html
                         res.writeHead(200, {'Content-Type': 'text/html'})
                         res.end(fs.readFileSync(@CLIENT_FILE,
                                                 {encoding:'utf-8'}))
+                        
                     when '/client' #< Serve the client coffeescript
                         res.writeHead(200, {'Content-Type': 'application/javascript'})
                         cs = fs.readFileSync(@CLIENT_COFFEE, {encoding:'utf-8'})
                         res.end(CoffeeScript.compile(cs)) #< @todo globalize the load, this is good for testing
+                    
                     when '/favicon.ico' #< Favicon
                         res.writeHead(200, {'Content-Type': 'image/x-icon'} )
                         #   @todo..make an icon
@@ -89,6 +92,13 @@ class MakeMKVServer
                 #   User has sent command to retrieve single disc info
                 console.log('getting disc info for', data)
                 @MakeMKV.disc_info(data, single_broadcast)
+            )
+            
+            client.on('rip_track', (data) =>
+                #   User has sent command to retrieve single disc info
+                console.log('getting disc info for', data)
+                @MakeMKV.rip_track(data['save_dir'], data['drive_id'],
+                                   data['track_ids'], single_broadcast)
             )
             
             #   Socket debugging
