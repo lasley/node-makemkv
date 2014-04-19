@@ -15,12 +15,15 @@ __version__ = '$Revision:$'
 fs = require('fs')
 spawn = require('child_process').spawn
 ini = require('ini')
+sanitizer = require(__dirname + '/sanitize_titles.coffee')
+
 
 class MakeMKV
 
     constructor: (save_to) -> 
         @NEWLINE_CHAR = '\n'
         @COL_PATTERN = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
+        @busy_devices = {}
         
         SETTINGS_PATH = __dirname + '/server_settings.ini'
         SERVER_SETTINGS = ini.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
@@ -33,11 +36,10 @@ class MakeMKV
         # Chars not allowed on the filesystem
         @RESERVED_CHAR_MAP = { '/':'-', '\\':'-', '?':' ', '%':' ', '*':' ', \
                              ':':'-', '|':'-', '"':' ', '<':' ', '>':' ', }
-        @PERMISSIONS = {'file':'0666', 'dir':'0777'} #< New file and dir permissions
+        @PERMISSIONS = {'file':'0666', 'dir':'0777'} #< New file and dir permissions @todo
         
         @save_to = if save_to then save_to else @USER_SETTINGS.output_dir
         
-        @busy_devices = {}
     
     choose_tracks: (disc_info, callback=false) ->
         ##  Choose the tracks that should be autoselected
@@ -50,6 +52,7 @@ class MakeMKV
         #   @param  int  disc_id Disc ID
         #   @param  bool busy
         #   @return bool Is the drive (or any if no disc_id) busy
+        
         if not disc_id
             @busy_devices['all'] = busy
             {
@@ -71,15 +74,19 @@ class MakeMKV
         #   @param  list    track_ids   List of ints (track IDs) to rip
         #   @param  func    callback    Callback function, will receive return var as param
         #   @return dict    Rip success? Keyed by track ID
-        ripped_tracks = {'data':{'disc_id':disc_id, 'results':[]}, \
-                        'cmd':'rip'}
-                            
+        
+        ripped_tracks = {'data':{'disc_id':disc_id, 'results':{}}, 'cmd':'rip_track'}
+        save_dir = @save_to + '/' + save_dir
+        
+        #   Critical failure, report for all tracks
         return_false = () =>
             for track_id in track_ids
-                ripped_tracks['data']['results'].push(track_id)
-            return ripped_tracks
+                ripped_tracks['data']['results'][track_id] = false
+            ripped_tracks
         
-        recurse_tracks = (track_ids, ripped_tracks, recurse_tracks) =>
+        #   Loop tracks to rip one at a time.
+        #   @todo - status monitoring signals
+        __recurse_tracks = (track_ids, ripped_tracks, __recurse_tracks) =>
             track_id = track_ids.pop()
             
             if track_id == undefined #< Tracks done
@@ -88,27 +95,41 @@ class MakeMKV
                     callback(ripped_tracks)
                 else
                     ripped_tracks #< Return
-
-            @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
-                            'dev:'+disc_id, track_id, save_dir, ], (code, data) =>
-                if code == 0
-                    if indexOf('1 titles saved.') != -1
-                        ripped_tracks['data'][track_id] = true
+            
+            else
+    
+                @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
+                                'dev:'+disc_id, track_id, save_dir, ], (code, data) =>
+                    
+                    if code == 0
+                        #   Determine ripping success
+                        for row in data
+                            if row.indexOf('1 titles saved.') != -1
+                                ripped_tracks['data']['results'][track_id] = true
+                                break
+                            
+                        if not ripped_tracks['data']['results'][track_id]
+                            ripped_tracks['data']['results'][track_id] = false
+                        
                     else
-                        ripped_tracks['data'][track_id] = false
-                else
-                    errors = data
-                    console.log('rip_track failed on #{disc_id}:#{track_id}. Output was:{@NEWLINE_CHAR}'+
-                                '"#{errors}"#{@NEWLINE_CHAR}')
-                    ripped_tracks['data'][track_id] = false
-                recurse_tracks(track_ids, ripped_tracks, recurse_tracks) #< Next
-            )
-        
-        if @get_busy(disc_id, true) #< If disc not busy, set busy and go
+                
+                        errors = data
+                        console.log(
+                            'rip_track failed on #{disc_id}:#{track_id}.' +
+                            'Output was:{@NEWLINE_CHAR}' +
+                            '"#{errors}"#{@NEWLINE_CHAR}'
+                        )
+                        ripped_tracks['data']['results'][track_id] = false
+                    __recurse_tracks(track_ids, ripped_tracks, __recurse_tracks) #< Next
+                
+                )
+            
+        #   If disc not busy, set busy and go
+        if @get_busy(disc_id, true) 
             save_dir = @_mk_dir(save_dir)
             if not save_dir
-                return_false()
-            recurse_tracks(track_ids, ripped_tracks, recurse_tracks)
+                return return_false()
+            __recurse_tracks(track_ids, ripped_tracks, __recurse_tracks)
         else
             false
             
@@ -117,12 +138,12 @@ class MakeMKV
         #   @param  int     disc_id     Disc ID
         #   @param  func    callback    Callback function, will receive info_out as param
         #   @return dict    info_out    Disc/track information
+        
         if @get_busy(disc_id, true) #< If disc not busy, set busy and go
             info_out = {'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, \
                         'cmd':'disc_info' }
             return_ = []
             errors = []
-            title_map = {} #< Map title #'s to m2ts
             
             @_spawn_generic(['--noscan', '-r', 'info', 'dev:'+disc_id, ], (code, disc_info)=>
                 if code == 0
@@ -132,7 +153,8 @@ class MakeMKV
                         split_line = []
                         for col in line.split(@COL_PATTERN)[1..] by 2
                             split_line.push(col)
-                
+                        
+                        #   @todo - fix this atrocious code
                         if split_line.length > 1 and split_line[0] != 'TCOUNT'
 
                             switch(line[0])
@@ -206,7 +228,7 @@ class MakeMKV
         #   @param  dict    disc_info   Disc info dict, at least one: [Name, Tree Info, Volume Name]
         #   @param  func    callback    Callback function, will receive drives as param
         
-        #   @todo - Actually sanitize..
+        
         disc_info['Name']
 
 
@@ -214,6 +236,7 @@ class MakeMKV
         ##  Scan drives, return info. Also sets @drive_map
         #   @param  func    callback Callback function, will receive drives as param
         #   @return dict    drives  Dict keyed by drive index, value is movie name
+        
         if @get_busy(false, true) #< Make sure none of the discs are busy
             drives = {'cmd':'scan_drives', 'data':{}}
             @drive_map = {}
@@ -243,11 +266,14 @@ class MakeMKV
         ##  Generic Application Spawn
         #   @param  list    args    List of str arguments
         #   @param  funct   callback
-        #   @param  str     path to binary
-            
+        #   @param  str     path    to binary
+        #   @callback(list    List of lines returned from err and out @todo - split these)
+        
+        #   Spawn process, init return var
         makemkv = spawn(path, args)
         return_ = []
         
+        #   Set signals, push into & return on exit
         makemkv.stdout.setEncoding('utf-8')
         makemkv.stdout.on('data', (data)=>
             return_.push(data)
@@ -266,6 +292,7 @@ class MakeMKV
         ##  Create dir if not exists
         #   @param  str dir Directory to create
         #   @return mixed   false if failed, otherwise new dir
+        
         dir = @_sanitize_fn(dir)
         
         try

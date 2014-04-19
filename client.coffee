@@ -19,8 +19,8 @@ class MakeMKVClient
         @socket = io.connect('192.168.69.104:1337')
         
         @socket.on('connect', () =>
-            console.log('Connected to server');
-            @socket.send('Client Connected');
+            console.log('Connected to server')
+            @socket.send('Client Connected')
             @socket.emit('display_cache', true)
         )
         
@@ -28,7 +28,7 @@ class MakeMKVClient
         @socket.on('change_out_dir', (data) => @change_out_dir(data))
         @socket.on('scan_drives', (data) => @scan_drives(data))
         @socket.on('disc_info', (data) => @disc_info(data))
-        @socket.on('rip_track', (data) => console.log(data))
+        @socket.on('rip_track', (data) => @rip_track(data))
         
         #   Socket debugging
         @socket.on('message', (data) =>
@@ -52,6 +52,28 @@ class MakeMKVClient
         $('#refresh_all').on('click', (event) =>
             @_socket_cmd('scan_drives', true)
         )
+
+        $('#main').on('click', '.get-info', (event) =>
+            drive_id = event.currentTarget.getAttribute('data-drive-id')
+            @_socket_cmd('disc_info', drive_id)
+        )
+        
+        $('#main').on('click', '.rip-tracks', (event) =>
+            
+            drive_id = event.currentTarget.getAttribute('data-drive-id')
+            panel = $(document.getElementById(drive_id))
+            save_dir = document.getElementById(drive_id + '_name').value
+            
+            checked_boxes = []
+            for check in panel.find('input[type="checkbox"]')
+                if check.checked
+                    checked_boxes.push(check.getAttribute('data-track-id'))
+                
+            @_socket_cmd('rip_track', {
+                'save_dir':save_dir, 'drive_id':drive_id,
+                'track_ids':checked_boxes
+            })
+        )
         
     _socket_cmd: (cmd, data) =>
         #   Send JSON.stringify(data)
@@ -66,7 +88,7 @@ class MakeMKVClient
         #   @param  str type_   Type of element to create
         #   @param  obj kwargs  Dict of attrs to set
         #   @return obj 
-        el = $('<' + type_ + '></' + type_ + '>')
+        el = $(document.createElement(type_))
         
         if class_
             el.addClass(class_)
@@ -120,45 +142,29 @@ class MakeMKVClient
                 footer, 'btn btn-default disc-info-btn get-info', 'button', {
                     'data-drive-id':drive, 'type':'button', html:'Get Info',
             })
-            refresh_btn.on('click', (event) =>
-                drive_id = event.currentTarget.getAttribute('data-drive-id')
-                @_socket_cmd('disc_info', drive_id)
-            )
-            
+
             #   Rip Tracks Button
             rip_btn = @_new_el(
                 footer, 'btn btn-default disc-info-btn hidden rip-tracks', 'button', {
                     'data-drive-id':drive, 'type':'button', html:'Rip Tracks',
             })
-            rip_btn.on('click', (event) =>
-                
-                drive_id = event.currentTarget.getAttribute('data-drive-id')
-                panel = $(document.getElementById(drive_id))
-                save_dir = document.getElementById('/dev/sr3_name').value
-                
-                checked_boxes = []
-                for check in panel.find('[type=checkbox]')
-                    if check.checked
-                        checked_boxes.append(check.getAttribute('data-track-id'))
-                    
-                @_socket_cmd('rip_track', {
-                    'save_dir':save_dir, 'drive_id':drive_id,
-                    'track_ids':checked_boxes
-                })
-            )
             
             container
         
         main_div = $('#main')
         main_div.html('')
         
-        #   Have to extract keys because the obj doesn't have a len
-        data_keys = Object.keys(data)
-        col_width = Math.floor(12 / data_keys.length)
-        for drive in data_keys
+        cnt = 0
+        for drive, disc of data
             console.log(drive)
-            disc = data[drive]
-            main_div.append(_new_disc_panel(drive, disc, col_width))
+            #disc = data[drive]
+            
+            if cnt%2 == 0
+                row = @_new_el(main_div, 'row')
+            
+            row.append(_new_disc_panel(drive, disc, 6))
+            cnt += 1
+            
             #if disc #< Get extended disc info only if there's a disc
             #    @_socket_cmd('disc_info', drive)
             
@@ -190,8 +196,7 @@ class MakeMKVClient
         
         #   Table for all the tracks (and the responsive container for it)
         tbl_cont = @_new_el(disc_panel, 'table-responsive')
-        table = @_new_el(tbl_cont, 'table', 'table table-bordered ' + \
-                         'table-condensed table-hover')
+        table = @_new_el(tbl_cont, 'table table-bordered table-condensed table-hover', 'table')
         
         #   Disc info header map and loop
         headers = {
@@ -205,10 +210,9 @@ class MakeMKVClient
             col = @_new_el(row, false, 'th', {html:header})
         
         #   Loop tracks, display data
-        for track_id of data['tracks']
+        for track_id, track_data of data['tracks']
             
             #   Initial row, track #, checkboxes
-            track_data = data['tracks'][track_id]
             row = @_new_el(table, false, 'tr')
             
             col = @_new_el(row, false, 'td')
@@ -222,19 +226,34 @@ class MakeMKVClient
             #   Fill Track Type Cnts
             track_cnts = track_data['cnts']
             cnt_key_order = ['Video', 'Audio', 'Subtitles']
+            track_data['_ttypes'] = []
             for key in cnt_key_order
-                track_data['_ttypes'] = '<em>' + key + ':</em> ' + track_cnts[key]
+                track_data['_ttypes'].push('<em>' + key + ':</em>' + track_cnts[key])
+            track_data['_ttypes'] = track_data['_ttypes'].join(', ')
             
             #   Loop the rest of the cols
-            for header of headers
-                if headers[header]
-                    col_data = track_data[headers[header]]
+            for _, header of headers
+                if header
+                    col_data = track_data[header]
                     @_new_el(row, false, 'td', {html:col_data})
                     
         #   Un-hide Rip Button
         panel = $(document.getElementById(data['disc_id']))
         $(panel.find('.rip-tracks')[0]).removeClass('hidden')
         
+    rip_track: (socket_in) =>
+        #   Receive track rip status, output to GUI
+        #   @param  dict    socket_in    Data dict passed from server
+        console.log(socket_in)
+        
+        data = socket_in['data']
+        panel = $(document.getElementById(data['disc_id']))
+        
+        for result, track_id of data['results']
+            result =  if result[track_id] then 'bg-success' else 'bg-danger'
+            chk_box = panel.find('input[data-track-id="' + track_id + '"]')
+            $(chk_box).parent().removeClass().addClass(result)
+            
 
     change_out_dir: (socket_in) ->
         #   Receive output dir and change on display
