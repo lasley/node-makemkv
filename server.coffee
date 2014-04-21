@@ -76,32 +76,32 @@ class MakeMKVServer
                 )
             )
             
+            #   User has sent command to change save_dir
             client.on('change_out_dir', (data) =>
-                #   User has sent command to change save_dir
                 console.log('changing out dir')
                 @save_out_dir(data, single_broadcast)
             )
             
+            #   User has sent command to scan drives
             client.on('scan_drives', (data) =>
-                #   User has sent command to scan drives
                 console.log('scanning drives')
                 @MakeMKV.scan_drives(single_broadcast)
             )
             
+            #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
-                #   User has sent command to retrieve single disc info
                 console.log('getting disc info for', data)
                 @MakeMKV.disc_info(data, single_broadcast)
             )
             
+            #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
-                #   User has sent command to retrieve single disc info
                 console.log('getting disc info for', data)
                 @MakeMKV.rip_track(data['save_dir'], data['drive_id'],
                                    data['track_ids'], single_broadcast)
             )
             
-            #   Socket debugging
+            ##  Socket debugging
             client.on('message', (data) ->
                 console.log('Client sent:', data)
             )
@@ -110,10 +110,10 @@ class MakeMKVServer
             )
             
         )
-        
+
+    ##  Send cached data to client in logic order
+    #       scan_drives, disc_info, rip_track
     display_cache: (callback=false) =>
-        ##  Send cached data to client in logic order
-        #       scan_drives, disc_info, rip_track
         
         cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip']
         cached = []
@@ -128,11 +128,11 @@ class MakeMKVServer
             callback(cached)
         else
             cached
-            
+
+    ##  Signal emit
+    #   @param  socket  socket  socket
+    #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
     do_emit: (socket, msg) ->
-        ##  Signal emit
-        #   @param  socket  socket  socket
-        #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
         
         cmd = msg['cmd']
         data = msg['data']
@@ -144,13 +144,13 @@ class MakeMKVServer
         data = @_cache_data(cmd, data, namespace)
         console.log(data)
         socket.sockets.emit(cmd, data)
-        
+
+    ##  Cache data to variable for when clients join
+    #   @param  str     cmd     Command that will be emitted
+    #   @param  mixed   data    Data obj
+    #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
+    #   @return dict    data with cache_refreshed date {'data':mixed, 'cache_refreshed':Date}
     _cache_data: (cmd, data, namespace='none') =>
-        ##  Cache data to variable for when clients join
-        #   @param  str     cmd     Command that will be emitted
-        #   @param  mixed   data    Data obj
-        #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
-        #   @return dict    data with cache_refreshed date {'data':mixed, 'cache_refreshed':Date}
         
         if typeof(@cache[cmd]) != 'object'
             @cache[cmd] = {}
@@ -159,13 +159,14 @@ class MakeMKVServer
         
         @cache[cmd][namespace]
     
+    ##  Register change to save directory (UI)
     change_out_dir: () =>
-        ##  Register change to save directory (UI)
+        
         @_cache_data('change_out_dir', @MakeMKV.save_to)
-    
+
+    ##  Save change to save directory
+    #   @param  str dir New save dir
     save_out_dir: (dir, callback=false) =>
-        ##  Save change to save directory
-        #   @param  str dir New save dir
         
         @MakeMKV.save_to = dir
         @change_out_dir()
@@ -177,4 +178,3 @@ class MakeMKVServer
         
         
 server = new MakeMKVServer(1337)
-
