@@ -16,7 +16,7 @@ class MakeMKVClient
     constructor: (bind=true) -> 
         #   Construct the socket, set callbacks
         #   @param  bool    bind    Bind the buttons? Default, yes
-        @socket = io.connect('192.168.69.104:1337')
+        @socket = io.connect(window.location.host)
         
         @socket.on('connect', () =>
             console.log('Connected to server')
@@ -63,6 +63,8 @@ class MakeMKVClient
             drive_id = event.currentTarget.getAttribute('data-drive-id')
             panel = $(document.getElementById(drive_id))
             save_dir = document.getElementById(drive_id + '_name').value
+
+            @_panel_disable(panel, true)
             
             checked_boxes = []
             for check in panel.find('input[type="checkbox"]')
@@ -74,6 +76,10 @@ class MakeMKVClient
                 'track_ids':checked_boxes
             })
         )
+        
+        $('#main').on('click', '.panel-title', (event) =>
+            panel = document.getElementById(event.currentTarget.id.split('_')[0]) #< id=disc_title
+            @_panel_collapse(panel))
         
     _socket_cmd: (cmd, data) =>
         #   Send JSON.stringify(data)
@@ -125,29 +131,34 @@ class MakeMKVClient
             heading = @_new_el(panel, 'panel-heading')
             header_container = @_new_el(heading)
             
+            if not disc_name
+                disc_name = 'None'
+            
             title = @_new_el(header_container, 'panel-title', 'div', {
                 html:disc_name, id:drive + '_title'
             })
-            
-            #   `-`/`+` glyph
-            glyph = @_new_el(header_container, 'glyphicon glyphicon-minus', 'span',
-                             {'cursor':'pointer'})
-            glyph.on('click', (event) => @_panel_collapse(panel))
+            title.css('cursor', 'pointer')
+
+            glyph = @_new_el(title, 'glyphicon glyphicon-minus', 'span')
 
             body = @_new_el(panel, 'panel-body', 'div', {id:drive + '_body'})
             footer = @_new_el(panel, 'panel-footer', 'div')
             
+            footer_div = @_new_el(footer, 'row')
+            
             #   Get Disc Info Button
             refresh_btn = @_new_el(
-                footer, 'btn btn-default disc-info-btn get-info', 'button', {
-                    'data-drive-id':drive, 'type':'button', html:'Get Info',
-            })
+                @_new_el(footer_div, 'col-md-1'),
+                'btn btn-default disc-info-btn get-info', 'button',
+                {'data-drive-id':drive, 'type':'button', html:'Get Info',}
+            )
 
             #   Rip Tracks Button
             rip_btn = @_new_el(
-                footer, 'btn btn-default disc-info-btn hidden rip-tracks', 'button', {
-                    'data-drive-id':drive, 'type':'button', html:'Rip Tracks',
-            })
+                @_new_el(footer_div, 'col-md-1 col-md-offset-9'),
+                'btn btn-default disc-info-btn hidden rip-tracks', 'button',
+                {'data-drive-id':drive, 'type':'button', html:'Rip Tracks',}
+            )
             
             container
         
@@ -178,6 +189,9 @@ class MakeMKVClient
         disc_panel = $(document.getElementById(data['disc_id'] + '_body'))
         disc_panel.html('')
         
+        #   New title
+        document.getElementById('/dev/sr3_title').childNodes[0].nodeValue = data['disc']['Name']
+        
         #   Form and form container
         form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
         form_div = @_new_el(form, 'form-group')
@@ -205,15 +219,22 @@ class MakeMKVClient
             'S-Map':'Segments Map',
         }
         
-        row = @_new_el(table, false, 'tr')
+        row = @_new_el(@_new_el(table, false, 'thead'), false, 'tr')
+        row.css('cursor', 'pointer')
+        
         for header of headers
             col = @_new_el(row, false, 'th', {html:header})
+            if header == 'Size'
+                col.attr('data-metric-name', 'b|byte')
+                col.addClass('sorter-metric')
+
+        tbody = @_new_el(table, false, 'tbody')
         
         #   Loop tracks, display data
         for track_id, track_data of data['tracks']
             
             #   Initial row, track #, checkboxes
-            row = @_new_el(table, false, 'tr')
+            row = @_new_el(tbody, false, 'tr')
             
             col = @_new_el(row, false, 'td')
             @_new_el(col, false, 'input', {
@@ -237,6 +258,8 @@ class MakeMKVClient
                     col_data = track_data[header]
                     @_new_el(row, false, 'td', {html:col_data})
                     
+        table.tablesorter()
+                    
         #   Un-hide Rip Button
         panel = $(document.getElementById(data['disc_id']))
         $(panel.find('.rip-tracks')[0]).removeClass('hidden')
@@ -249,10 +272,12 @@ class MakeMKVClient
         data = socket_in['data']
         panel = $(document.getElementById(data['disc_id']))
         
-        for result, track_id of data['results']
-            result =  if result[track_id] then 'bg-success' else 'bg-danger'
+        @_panel_disable(panel, false)
+
+        for track_id, result of data['results']
+            result =  if result then 'bg-success' else 'bg-danger'
             chk_box = panel.find('input[data-track-id="' + track_id + '"]')
-            $(chk_box).parent().removeClass().addClass(result)
+            $(chk_box).parent().parent().removeClass().addClass(result)
             
 
     change_out_dir: (socket_in) ->
@@ -272,4 +297,16 @@ class MakeMKVClient
         glyph.toggleClass('glyphicon-minus')
         glyph.toggleClass('glyphicon-plus')
         
+        #   Clear most likely unintentional selection
+        if window.getSelection
+            if window.getSelection().empty #< Chrome
+                window.getSelection().empty()
+            else if window.getSelection().removeAllRanges #< FF
+                window.getSelection().removeAllRanges()
+        else if document.selection #< IE
+            document.selection.empty()
+            
+    _panel_disable: (panel, disable=true) ->
+        panel.find(':input').prop('disabled', disable)
+            
 client = new MakeMKVClient()

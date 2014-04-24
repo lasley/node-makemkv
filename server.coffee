@@ -33,15 +33,20 @@ class MakeMKVServer
         @change_out_dir() #< Prime the out dir cache
         
         server = http.createServer((req, res) =>
+            
             req.setEncoding 'utf8'
             path = url.parse(req.url).pathname
+            
             if req.method == 'POST'
+            
                 req.on('data', (chunk) =>
                     data = JSON.parse(chunk.toString())
                     @do_broadcast(socket, {'app':path[1..], 'data':data})
                     res.end(@SUCCESS_STRING)
                 )
+            
             else
+            
                 switch path
                     
                     when '/' #< Serve static client html
@@ -59,9 +64,10 @@ class MakeMKVServer
                         #   @todo..make an icon
                         res.end('Success')
                         
-        ).listen(port)
-
+        ).listen(@MakeMKV.LISTEN_PORT)
+        
         socket = io.listen(server)
+        console.log('Listening on ' + @MakeMKV.LISTEN_PORT)
         
         #   Bind socket actions on client connect
         socket.on('connection', (client) =>
@@ -76,32 +82,32 @@ class MakeMKVServer
                 )
             )
             
+            #   User has sent command to change save_dir
             client.on('change_out_dir', (data) =>
-                #   User has sent command to change save_dir
                 console.log('changing out dir')
                 @save_out_dir(data, single_broadcast)
             )
             
+            #   User has sent command to scan drives
             client.on('scan_drives', (data) =>
-                #   User has sent command to scan drives
                 console.log('scanning drives')
                 @MakeMKV.scan_drives(single_broadcast)
             )
             
+            #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
-                #   User has sent command to retrieve single disc info
                 console.log('getting disc info for', data)
                 @MakeMKV.disc_info(data, single_broadcast)
             )
             
+            #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
-                #   User has sent command to retrieve single disc info
                 console.log('getting disc info for', data)
                 @MakeMKV.rip_track(data['save_dir'], data['drive_id'],
                                    data['track_ids'], single_broadcast)
             )
             
-            #   Socket debugging
+            ##  Socket debugging
             client.on('message', (data) ->
                 console.log('Client sent:', data)
             )
@@ -110,29 +116,27 @@ class MakeMKVServer
             )
             
         )
-        
+
+    ##  Send cached data to client in logic order
+    #       scan_drives, disc_info, rip_track
     display_cache: (callback=false) =>
-        ##  Send cached data to client in logic order
-        #       scan_drives, disc_info, rip_track
         
-        cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip']
+        cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip_track']
         cached = []
         for cmd in cmd_order
             if typeof(@cache[cmd]) == 'object'
                 for namespace of @cache[cmd]
                     cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
-        
-        console.log(cached)
-        
+
         if callback
             callback(cached)
         else
             cached
-            
+
+    ##  Signal emit
+    #   @param  socket  socket  socket
+    #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
     do_emit: (socket, msg) ->
-        ##  Signal emit
-        #   @param  socket  socket  socket
-        #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
         
         cmd = msg['cmd']
         data = msg['data']
@@ -142,15 +146,14 @@ class MakeMKVServer
             
         namespace = if data['disc_id'] then data['disc_id'] else 'none'
         data = @_cache_data(cmd, data, namespace)
-        console.log(data)
         socket.sockets.emit(cmd, data)
-        
+
+    ##  Cache data to variable for when clients join
+    #   @param  str     cmd     Command that will be emitted
+    #   @param  mixed   data    Data obj
+    #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
+    #   @return dict    data with cache_refreshed date {'data':mixed, 'cache_refreshed':Date}
     _cache_data: (cmd, data, namespace='none') =>
-        ##  Cache data to variable for when clients join
-        #   @param  str     cmd     Command that will be emitted
-        #   @param  mixed   data    Data obj
-        #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
-        #   @return dict    data with cache_refreshed date {'data':mixed, 'cache_refreshed':Date}
         
         if typeof(@cache[cmd]) != 'object'
             @cache[cmd] = {}
@@ -159,13 +162,14 @@ class MakeMKVServer
         
         @cache[cmd][namespace]
     
+    ##  Register change to save directory (UI)
     change_out_dir: () =>
-        ##  Register change to save directory (UI)
+        
         @_cache_data('change_out_dir', @MakeMKV.save_to)
-    
+
+    ##  Save change to save directory
+    #   @param  str dir New save dir
     save_out_dir: (dir, callback=false) =>
-        ##  Save change to save directory
-        #   @param  str dir New save dir
         
         @MakeMKV.save_to = dir
         @change_out_dir()
@@ -176,5 +180,4 @@ class MakeMKVServer
             @MakeMKV.save_to
         
         
-server = new MakeMKVServer(1337)
-
+server = new MakeMKVServer()

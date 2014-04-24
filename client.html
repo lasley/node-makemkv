@@ -2,7 +2,7 @@
 
 <html>
 <head>
-    <title>Remote MakeMKV</title>
+    <title>Node-MakeMKV</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -19,21 +19,21 @@
             <div class='col-md-6'>
                 <form class='form-horizontal'>
                     <div class='form-group'>
-                        <label for='output_dir' class='col-sm-2 control-label'>Output Directory:</label>
-                        <div class='col-sm-9'>
+                        <label for='output_dir' class='col-sm-2 control-label'>Output Dir:</label>
+                        <div class='col-sm-8'>
                             <input type='text' id='output_dir' class='form-control' />
                         </div>
-                        <div class='col-sm-1'>
+                        <div class='col-sm-2'>
                             <button type='button' class='btn btn-default' id='send_out_dir'>Save</button>
                         </div>
                     </div>
                 </form>
             </div>
             <div class='col-sm-1 col-md-offset-1'>
-                <button type='button' class='btn btn-default' id='refresh_all'>Refresh Drive(s)</button>
+                <button type='button' class='btn btn-default' id='rip_selected'>Rip Selected</button>
             </div>
             <div class='col-sm-1 col-md-offset-2 col-sm-offset-9'>
-                <button type='button' class='btn btn-default' id='rip_selected'>Rip Selected</button>
+                <button type='button' class='btn btn-default' id='refresh_all'>Refresh Drive(s)</button>
             </div>
         </div>
         <!-- MakeMKV Data Placeholder -->
@@ -45,6 +45,8 @@
     <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.15.14/jquery.tablesorter.min.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.15.14/parsers/parser-metric.js'></script>
     <script src="/client"></script>
 
 </body>

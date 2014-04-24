@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <renaming>
-    
-    <!--    Regex used for season/disc/episode extraction   -->
-    <format_season>,? ?(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})\\,? ?</format_season>
-    
+
     <videos>
         <regex>(\\[|\\()[\\w\\-\\.\\s]{5,}(\\[|\\()</regex>     <!--<    Stuff in brackets/parenths, not a year    -->
         <regex>(\\[|\\()[a-z\\s]{0,}(\\]|\\))</regex>        <!--<    Letters in brackets/parenths    -->
