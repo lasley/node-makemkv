@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<renaming>
+
+    <videos>
+        <regex>(\\[|\\()[\\w\\-\\.\\s]{5,}(\\[|\\()</regex>     <!--<    Stuff in brackets/parenths, not a year    -->
+        <regex>(\\[|\\()[a-z\\s]{0,}(\\]|\\))</regex>        <!--<    Letters in brackets/parenths    -->
+        <regex> (deu|eng|ita|spa|swe|rus)</regex>       <!--<    Languages   -->
+        <regex>(10|7|4)(80|20)(p|i)</regex>             <!--<    Aspect/Resolution   -->
+        <regex>(4|16)(x|\\*)(3|9)</regex>                <!--<    Aspect/Resolution   -->
+        <regex> blu(\\-ray|ray|\\sray)</regex>            <!--<    Bluray  -->
+        <regex> (ur|unrated|ff)</regex>                 <!--<    Ratings -->
+        <regex>(director'?s cut)</regex>                <!--<    Cuts    -->
+        <regex> (special) edition</regex>               <!--<    Editions    -->
+        <regex> us$</regex>                             <!--<    US - keep last  -->
+        <replace>
+            <original_r>(Its ?always ?sunny ?in ?philadelphia|Its ?always ?sunny ?in ?phila|Its ?always ?sunny)</original_r>
+            <change_to>It's Always Sunny In Philadelphia</change_to>
+        </replace>
+        <replace>
+            <original_r>southpark</original_r>
+            <change_to>South Park</change_to>
+        </replace>
+        <replace>
+            <original_r>xfiles</original_r>
+            <change_to>X Files</change_to>
+        </replace>
+    </videos>
+
+    <torrent_related>       <!--    @todo   Test/implement these... -->
+        <regex> (aaf|hdmi|cee|ppv|vc\\-1)</regex>    <!--<    Initialish...   -->
+        <regex> (\\-rewards|\\-tb|web\\-dl)]]</regex>  <!--<    Err     -->
+        <regex> (bradje|ciclo e\\. murphy)</regex>   <!--<    Look Like Real names    -->
+        <regex> c(trl|)hd</regex>                   <!--<    Initialish..    -->
+        <regex> (ctu|ebp|esir|hv|dmt)</regex>       <!--<    Initialish..    -->
+        <regex> (flawl3ss|framestor|mysilu|newartriot|samlpe)</regex>   <!--<    Hipsters    -->
+        <regex> (aaaevilcharya|amiable|dimension|lildick|lonewolf|immerse)</regex>  <!--<    Hipsters    -->
+        <regex> (sinners|synergy|oliver|orenji|ajp)</regex> <!--<    Hipsters    -->
+        <regex>rip by [a-z]{1,}</regex>             <!--<    Generic -->
+        <regex>\\-reward(\\.|)$</regex>               <!--<    Hipster -->
+        <regex>hd(club|italy)</regex>               <!--<    w/ hd   -->
+        <regex>www [a-z0-9\\s\\_\\-]{1,} [a-z]{2,4}</regex>    <!--<    Generic sites   -->
+        <regex> wiki </regex>                       <!--<    Derp    -->
+                                                    <!--<    Audio Related   -->
+        <regex>(2|dual)audio</regex>
+        <regex> (dd|)5(\\.|)1(ch|)</regex>
+        <regex>6ch</regex>
+                                                    <!--<    Encodings   -->
+        <regex> (aaf|ac3|dts|dxva|hdma|hdmi|ntsc|pal)</regex>   
+        <regex>h(\\.|)264</regex>
+        <regex>(true|waf)hd</regex>
+        <regex>x(\\.|)(264|vid)</regex>
+        <regex> (bd|hd)(dvd)?(rip|tv)?</regex>      <!--<    Rip type    -->
+        <regex>(hd|)dvd(rip|media|)</regex>         <!--<    Rip type    -->
+        <regex>multi(lang|sub)</regex>              <!--<    Subtitles   -->
+        <regex> (nl|ro|)(\\.|\\s|\\-|\\_|)sub(bed|s)</regex>   <!--< Subs    -->
+        <regex> (avi|m2ts|mkv|mp4|mpg)(only|)</regex><!--<   File Types  -->
+    </torrent_related>
+    
+</renaming>
