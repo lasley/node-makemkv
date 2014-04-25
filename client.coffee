@@ -50,10 +50,12 @@ class MakeMKVClient
         )
         
         $('#refresh_all').on('click', (event) =>
+            @_panel_disable()
             @_socket_cmd('scan_drives', true)
         )
 
         $('#main').on('click', '.get-info', (event) =>
+            @_panel_disable()
             drive_id = event.currentTarget.getAttribute('data-drive-id')
             @_socket_cmd('disc_info', drive_id)
         )
@@ -79,7 +81,13 @@ class MakeMKVClient
         
         $('#main').on('click', '.panel-title', (event) =>
             panel = document.getElementById(event.currentTarget.id.split('_')[0]) #< id=disc_title
-            @_panel_collapse(panel))
+            @_panel_collapse(panel)
+        )
+        
+        $('#rip-toggle').on('change', (event) ->
+            table = event.currentTarget.parentNode.parentNode.parentNode # chk.th.thead.table
+            $(table).find('rip-chk').attr('checked', event.currentTarget.checked)
+        )
         
     _socket_cmd: (cmd, data) =>
         #   Send JSON.stringify(data)
@@ -188,6 +196,7 @@ class MakeMKVClient
         #   Get Disc panel body and clear it
         disc_panel = $(document.getElementById(data['disc_id'] + '_body'))
         disc_panel.html('')
+        @_panel_disable(disc_panel, false)
         
         #   New title
         document.getElementById(data['disc_id'] + '_title').childNodes[0].nodeValue = data['disc']['Name']
@@ -214,19 +223,22 @@ class MakeMKVClient
         
         #   Disc info header map and loop
         headers = {
-            'Rip':false, '#':false, 'Source':'Source File Name', 
-            'Chptrs':'Chapter Count', 'Size':'Disk Size', 'Track Types':'_ttypes',
-            'S-Map':'Segments Map',
+            false:false, '#':false, 'Source':'Source File Name', 'Chptrs':'Chapter Count',
+            'Size':'Disk Size', 'Track Types':'_ttypes', 'S-Map':'Segments Map',
         }
         
         row = @_new_el(@_new_el(table, false, 'thead'), false, 'tr')
         row.css('cursor', 'pointer')
         
+        ripall = @_new_el(@_new_el(row, false, 'th'), false, 'input',
+                          {type:'checkbox', name:'rip-toggle'}
+        
         for header of headers
-            col = @_new_el(row, false, 'th', {html:header})
-            if header == 'Size'
-                col.attr('data-metric-name', 'b|byte')
-                col.addClass('sorter-metric')
+            if header
+                col = @_new_el(row, false, 'th', {html:header})
+                if header == 'Size'
+                    col.attr('data-metric-name', 'b|byte')
+                    col.addClass('sorter-metric')
 
         tbody = @_new_el(table, false, 'tbody')
         
@@ -238,7 +250,7 @@ class MakeMKVClient
             
             col = @_new_el(row, false, 'td')
             @_new_el(col, false, 'input', {
-                type:'checkbox', 'data-track-id':track_id, 
+                type:'checkbox', 'data-track-id':track_id, name:'rip-chk',
                 'data-autochecked':track_data['autochk']
             })
             
@@ -306,7 +318,11 @@ class MakeMKVClient
         else if document.selection #< IE
             document.selection.empty()
             
-    _panel_disable: (panel, disable=true) ->
+    _panel_disable: (panel=false, disable=true) ->
+        
+        if not panel
+            panel = $('#main')
+            
         panel.find(':input').prop('disabled', disable)
             
 client = new MakeMKVClient()
