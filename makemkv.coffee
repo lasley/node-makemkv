@@ -47,16 +47,22 @@ class MakeMKV
     #   @return dict    disc_info with injected `autoselect` key in every track (bool)
     choose_tracks: (disc_info, callback=false) ->
         
+        track_sizes = {}
+        for track_id, track_data of disc_info.tracks
+            track_sizes[track_id] = track
+
+ 
+        
     ##  Determine which discs are being used
     #   @param  int  disc_id Disc ID
     #   @param  bool busy
     #   @return bool Is the drive (or any if no disc_id) busy
-    get_busy: (disc_id, busy) =>
+    toggle_busy: (disc_id, busy) =>
         
         if not disc_id
             @busy_devices['all'] = busy
             {
-                'cmd'   :   'get_busy',
+                'cmd'   :   'toggle_busy',
                 'val'   :   @busy_devices
             }
         else
@@ -129,7 +135,7 @@ class MakeMKV
                 )
             
         #   If disc not busy, set busy and go
-        if @get_busy(disc_id, true) 
+        if @toggle_busy(disc_id, true) 
             save_dir = @_mk_dir(save_dir)
             if not save_dir
                 return return_false()
@@ -143,7 +149,7 @@ class MakeMKV
     #   @return dict    info_out    Disc/track information
     disc_info: (disc_id, callback=false) =>
         
-        if @get_busy(disc_id, true) #< If disc not busy, set busy and go
+        if @toggle_busy(disc_id, true) #< If disc not busy, set busy and go
             
             info_out = {
                 'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, 'cmd':'disc_info'
@@ -214,7 +220,7 @@ class MakeMKV
                             info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
                     
                     #   Release disc, sanitize disc name, push into cache
-                    @get_busy(disc_id)
+                    @toggle_busy(disc_id)
 
                     #   Sanitize Title Names
                     title = info_out['data']['disc']['Name']
@@ -247,7 +253,7 @@ class MakeMKV
     #   @return dict    drives  Dict keyed by drive index, value is movie name
     scan_drives: (callback=false) =>
         
-        if @get_busy(false, true) #< Make sure none of the discs are busy
+        if @toggle_busy(false, true) #< Make sure none of the discs are busy
             drives = {'cmd':'scan_drives', 'data':{}}
             @drive_map = {}
             #   Spawn MakeMKV with callback
@@ -264,7 +270,7 @@ class MakeMKV
                         else
                             drives['data'][drive_location] = false 
                         @drive_map[drive_location] = info[1].split(':')[1] #<    Index the drive location to makemkv's drive ID
-                @get_busy(false)
+                @toggle_busy(false)
 
                 if callback
                     callback(drives)

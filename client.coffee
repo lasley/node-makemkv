@@ -29,6 +29,7 @@ class MakeMKVClient
         @socket.on('scan_drives', (data) => @scan_drives(data))
         @socket.on('disc_info', (data) => @disc_info(data))
         @socket.on('rip_track', (data) => @rip_track(data))
+        @socket.on('_panel_disable', (data) => @panel_disable_socket(data))
         
         #   Socket debugging
         @socket.on('message', (data) =>
@@ -55,8 +56,8 @@ class MakeMKVClient
         )
 
         $('#main').on('click', '.get-info', (event) =>
-            @_panel_disable()
             drive_id = event.currentTarget.getAttribute('data-drive-id')
+            @_panel_disable($(document.getElementById(drive_id)))
             @_socket_cmd('disc_info', drive_id)
         )
         
@@ -186,6 +187,8 @@ class MakeMKVClient
             
             #if disc #< Get extended disc info only if there's a disc
             #    @_socket_cmd('disc_info', drive)
+        
+        @_panel_disable(false, false)
             
     disc_info: (socket_in) =>
         #   Callback for disc_info cmd
@@ -231,7 +234,7 @@ class MakeMKVClient
         row.css('cursor', 'pointer')
         
         ripall = @_new_el(@_new_el(row, false, 'th'), false, 'input',
-                          {type:'checkbox', name:'rip-toggle'}
+                          {type:'checkbox', name:'rip-toggle'})
         
         for header of headers
             if header
@@ -274,6 +277,7 @@ class MakeMKVClient
                     
         #   Un-hide Rip Button
         panel = $(document.getElementById(data['disc_id']))
+        @_panel_disable(panel, false)
         $(panel.find('.rip-tracks')[0]).removeClass('hidden')
         
     rip_track: (socket_in) =>
@@ -318,11 +322,25 @@ class MakeMKVClient
         else if document.selection #< IE
             document.selection.empty()
             
+    panel_disable_socket: (data) =>
+        
+        if data.disc_id == 'all'
+            panel = false
+        else
+            panel = $(document.getElementById(data.disc_id))
+        
+        if data.busy == undefined
+            @_panel_disable(panel)
+        else
+            @_panel_disable(panel, data.busy)
+            
     _panel_disable: (panel=false, disable=true) ->
         
         if not panel
             panel = $('#main')
+            $('.disc-btn').prop('disabled', disable)
             
         panel.find(':input').prop('disabled', disable)
+        
             
 client = new MakeMKVClient()

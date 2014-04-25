@@ -28,7 +28,7 @@ class SanitizeTitles
         @NO_UPPERCASE = ['the', 'a', 'an', 'of', 'by' , 'up' , 'is' , 'in' , 'at' , 'on' , 'to']
         @DEFAULT_TITLE = 'Title'
         @VID_EXTS = ['mkv', 'mpg', 'avi', 'mp4', 'm4v']
-        @SPACE_CHARS = /[ _-\.]+/
+        @SPACE_CHARS = /[ _\-\.]+/
         
         @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/ig
         

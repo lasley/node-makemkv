@@ -127,7 +127,11 @@ class MakeMKVServer
             if typeof(@cache[cmd]) == 'object'
                 for namespace of @cache[cmd]
                     cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
-
+        
+        #   Disable busy drive panels
+        for disc_id, busy of @MakeMKV.busy_devices
+            cached.push({'cmd':'_panel_disable', 'data':{'disc_id':disc_id, 'busy':busy}})
+        
         if callback
             callback(cached)
         else
