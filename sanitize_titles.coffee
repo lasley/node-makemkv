@@ -30,7 +30,7 @@ class SanitizeTitles
         @VID_EXTS = ['mkv', 'mpg', 'avi', 'mp4', 'm4v']
         @SPACE_CHARS = new RegExp('[' + [' ', '_', '-', '.'].join('\\') + ']{1,}')
         
-        @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/i
+        @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/ig
         
         parser = new xml2js.Parser()
         fs.readFile(__dirname + '/rename_regexes.xml', (err, data) =>
@@ -61,21 +61,18 @@ class SanitizeTitles
                     if not volume_info[key]
                         volume_info[key] = val
         
-        #   regex->_strip_spaces->title_case->return
-        @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
+        #   regex->_strip_spaces->title_case->format_season->return
+        volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
+        @format_season(volume_info)
         
     ##  Loop regexes from XML, replace
     #   @param  Str title  Input
     #   @return Sanitized string   
     do_regexes: (title) =>
-        
-        console.log(@VIDEO_RULES.regex)
-        
+
         for regex in @VIDEO_RULES.regex
             title = title.replace(regex, ' ')
-        
-        console.log(@VIDEO_RULES.replace)
-        
+
         for replace in @VIDEO_RULES.replace
             title = title.replace(replace.original_r, replace.change_to)
             
@@ -88,9 +85,10 @@ class SanitizeTitles
     #   @return Dict    {season,episode,disk,txt}
     volume_info: (title) =>
 
-        lpad = (n, width=2, z='0') ->
-            n = n + ''
-            n.length >= width ? n : new Array(width - n.length + 1).join(z) + n
+        lpad = (value, padding=2, zeroes='0') ->
+            zeroes = "0"
+            zeroes += "0" for i in [1..padding]
+            (zeroes + value).slice(padding * -1)
             
         match_map = {
             'e':@DIR_HIERARCHY[2], 't':@DIR_HIERARCHY[2], 'v':@DIR_HIERARCHY[0], 
@@ -115,12 +113,13 @@ class SanitizeTitles
     ##  Format season information to Sanitized S#D#E#
     #   @param  Dict    season_information  as returned by volume_info
     #   @param  Bool    include_disc_num    include disc in out
-    format_season: (season_info, inc_disc_num=false) =>
+    format_season: (season_info, inc_disc_num=true) =>
 
         season_out = []   
         for type_ in @DIR_HIERARCHY
             if season_info[type_]
-                season_out.push(type_[0].toUpperCase(), season_info[type_])
+                if type_ != 'disc' or inc_disc_num
+                    season_out.push(type_[0].toUpperCase(), season_info[type_])
             
         if season_out
             season_info.sanitized + ' ' + season_out.join('')

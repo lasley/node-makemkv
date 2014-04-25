@@ -190,7 +190,7 @@ class MakeMKVClient
         disc_panel.html('')
         
         #   New title
-        document.getElementById('/dev/sr3_title').childNodes[0].nodeValue = data['disc']['Name']
+        document.getElementById(data['disc_id'] + '_title').childNodes[0].nodeValue = data['disc']['Name']
         
         #   Form and form container
         form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})

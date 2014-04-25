@@ -226,7 +226,7 @@ class MakeMKV
                             fallbacks.push(info_out['data']['disc'][type_])
                             
                     info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
-                    
+
                     if callback
                         callback(info_out)
                     else
