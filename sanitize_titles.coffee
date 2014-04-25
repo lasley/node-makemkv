@@ -28,7 +28,7 @@ class SanitizeTitles
         @NO_UPPERCASE = ['the', 'a', 'an', 'of', 'by' , 'up' , 'is' , 'in' , 'at' , 'on' , 'to']
         @DEFAULT_TITLE = 'Title'
         @VID_EXTS = ['mkv', 'mpg', 'avi', 'mp4', 'm4v']
-        @SPACE_CHARS = new RegExp('[' + [' ', '_', '-', '.'].join('\\') + ']{1,}')
+        @SPACE_CHARS = /[ _-\.]+/
         
         @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/ig
         
@@ -61,9 +61,9 @@ class SanitizeTitles
                     if not volume_info[key]
                         volume_info[key] = val
         
-        #   regex->_strip_spaces->title_case->format_season->return
-        volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
-        @format_season(volume_info)
+        #   regex-->title_case->format_season->_strip_spaces->return
+        volume_info['sanitized'] = @_do_title_case(@do_regexes(volume_info['sanitized']))
+        @_strip_spaces(@format_season(volume_info))
         
     ##  Loop regexes from XML, replace
     #   @param  Str title  Input
