@@ -85,9 +85,8 @@ class MakeMKVClient
             @_panel_collapse(panel)
         )
         
-        $('#rip-toggle').on('change', (event) ->
-            table = event.currentTarget.parentNode.parentNode.parentNode # chk.th.thead.table
-            $(table).find('rip-chk').attr('checked', event.currentTarget.checked)
+        $('#main').on('change', '.rip-toggle', (event) ->
+            $(event.currentTarget).parents('table').find('.rip-chk').attr('checked', event.currentTarget.checked)
         )
         
     _socket_cmd: (cmd, data) =>
@@ -226,22 +225,21 @@ class MakeMKVClient
         
         #   Disc info header map and loop
         headers = {
-            false:false, '#':false, 'Source':'Source File Name', 'Chptrs':'Chapter Count',
+            '#':false, 'Source':'Source File Name', 'Chptrs':'Chapter Count',
             'Size':'Disk Size', 'Track Types':'_ttypes', 'S-Map':'Segments Map',
         }
         
         row = @_new_el(@_new_el(table, false, 'thead'), false, 'tr')
         row.css('cursor', 'pointer')
         
-        ripall = @_new_el(@_new_el(row, false, 'th'), false, 'input',
-                          {type:'checkbox', name:'rip-toggle'})
+        ripall = @_new_el(@_new_el(row, false, 'th'), 'rip-toggle', 'input',
+                          {type:'checkbox'})
         
         for header of headers
-            if header
-                col = @_new_el(row, false, 'th', {html:header})
-                if header == 'Size'
-                    col.attr('data-metric-name', 'b|byte')
-                    col.addClass('sorter-metric')
+            col = @_new_el(row, false, 'th', {html:header})
+            if header == 'Size'
+                col.attr('data-metric-name', 'b|byte')
+                col.addClass('sorter-metric')
 
         tbody = @_new_el(table, false, 'tbody')
         
@@ -252,8 +250,8 @@ class MakeMKVClient
             row = @_new_el(tbody, false, 'tr')
             
             col = @_new_el(row, false, 'td')
-            @_new_el(col, false, 'input', {
-                type:'checkbox', 'data-track-id':track_id, name:'rip-chk',
+            @_new_el(col, 'rip-chk', 'input', {
+                type:'checkbox', 'data-track-id':track_id,
                 'data-autochecked':track_data['autochk']
             })
             
