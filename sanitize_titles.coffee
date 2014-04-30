@@ -132,7 +132,7 @@ class SanitizeTitles
     #   @return Str Sanitized String
     _strip_spaces: (str_in, callback=false) ->
 
-        str_ = str_in.replace(@SPACE_CHARS, ' ')
+        str_ = str_in.replace(@SPACE_CHARS, ' ').trim()
         if callback
             callback(str_)
         else
