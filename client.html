@@ -40,6 +40,23 @@
         <!-- MakeMKV Data Placeholder -->
         <div id='main'> </div>
     </div>
+    
+    <!-- Error Modal -->
+    <div class='modal-fade' id='err_modal' tabindex='-1' role='dialog' aria-hidden='true'>
+        <div class='modal-dialog'>
+            <div class='modal-content'>
+                <div class='modal-header'>
+                    <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
+                    <h4 class='modal-title' id='err_title'></h4>
+                </div>
+                <div class='modal-body' id='err_msg'></div>
+                <div class='modal-footer' id='err_foot'>
+                    <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
+                    <button type='button' class='btn btn-primary'>Save changes</button>
+                </div>  
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css'></script>

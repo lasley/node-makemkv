@@ -89,6 +89,14 @@ class MakeMKVClient
             $(event.currentTarget).parents('table').find('.rip-chk').attr('checked', event.currentTarget.checked)
         )
         
+    _error: (type, msg) ->
+        #   Display error modal
+        #   @param  str type Error type, modal title
+        #   @param  str msg  Error message, modal body
+        document.getElementById('err_title').innerHTML = type
+        document.getElementById('err_body').innerHTML = type
+        $('#err_modal').modal()
+        
     _socket_cmd: (cmd, data) =>
         #   Send JSON.stringify(data)
         #   @param  str     cmd     Command that is being performed

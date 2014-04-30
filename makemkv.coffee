@@ -97,7 +97,10 @@ class MakeMKV
             track_id = track_ids.pop()
             
             if track_id == undefined #< Tracks done
-
+                
+                #   Loop tracks, normalize the names
+                
+                
                 if callback
                     callback(ripped_tracks)
                 else

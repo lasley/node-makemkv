@@ -18,7 +18,7 @@ class SanitizeTitles
     #   Order of hierarchy
     DIR_HIERARCHY: ['season', 'disc', 'episode']
     @RESERVED_CHAR_MAP: { #   Filesystem reserved char replacement map
-        '/':'-', '\\':'-', ':':'-', '|':'-', '\u2013':'-',
+        '/':'-', '\\':'-', ':':'-', '|':'-', '\u2012':'-', '\u2013':'-', '\u2014':'-',
         '?':' ', '%':' ', '*':' ', '"':' ', '<':' ', '>':' '
     }
     
@@ -32,10 +32,22 @@ class SanitizeTitles
         
         @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/ig
         
+        #   Generate regexes from XML file
         parser = new xml2js.Parser()
         fs.readFile(__dirname + '/rename_regexes.xml', (err, data) =>
             parser.parseString(data, (err, result) =>
-                @VIDEO_RULES = result.renaming.videos.shift()
+                
+                raw_regexes = result.renaming.videos.shift()
+                @VIDEO_RULES = {'regex':[], 'replace':[]}
+                
+                for re in raw_regexes.regex
+                    @VIDEO_RULES.regex.push(new RegExp(re, 'gi'))
+                                               
+                for re in raw_regexes.replace
+                    @VIDEO_RULES.replace.push({
+                        'original_r':new RegExp(re.original_r.shift(), 'g')
+                        'change_to':re.change_to.shift()
+                    })
             )
         )
         
@@ -43,8 +55,6 @@ class SanitizeTitles
     #   @param  Str     string  Input
     #   @param  list    fallbacks   fallback titles to use for S/D/T gathering
     #   @return list    [sanitized,volume_info]
-    
-    #   Reserved chars 
     do_sanitize: (title, fallbacks=[]) =>
         
         for change_to, change_from of @RESERVED_CHAR_MAP
@@ -154,10 +164,10 @@ class SanitizeTitles
             if word
                 if ROMAN_NUMERAL_REGEX.test(word) #<   Cap if Roman Numeral
                     out.push(word.toUpperCase())
-                else if word not in @NO_UPPERCASE #<   Cap first letter if not defined
+                else if word not in @NO_UPPERCASE #<   Cap first letter of good words
                     out.push(word.charAt(0).toUpperCase() + word.slice(1))
                 else #< No cap
-                    if word == 'the' and not out.length #< Kill the if first word
+                    if word == 'the' and not out.length #< Kill `the` if it is first word
                         the_ = true
                     else
                         out.push(word)
