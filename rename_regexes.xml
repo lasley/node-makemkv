@@ -3,16 +3,16 @@
 <renaming>
 
     <videos>
-        <regex>(\\[|\\()[\\w\\-\\.\\s]{5,}(\\[|\\()</regex>     <!--<    Stuff in brackets/parenths, not a year    -->
-        <regex>(\\[|\\()[a-z\\s]{0,}(\\]|\\))</regex>        <!--<    Letters in brackets/parenths    -->
-        <regex> (deu|eng|ita|spa|swe|rus)</regex>       <!--<    Languages   -->
-        <regex>(10|7|4)(80|20)(p|i)</regex>             <!--<    Aspect/Resolution   -->
-        <regex>(4|16)(x|\\*)(3|9)</regex>                <!--<    Aspect/Resolution   -->
-        <regex> blu(\\-ray|ray|\\sray)</regex>            <!--<    Bluray  -->
-        <regex> (ur|unrated|ff)</regex>                 <!--<    Ratings -->
-        <regex>(director'?s cut)</regex>                <!--<    Cuts    -->
-        <regex> (special) edition</regex>               <!--<    Editions    -->
-        <regex> us$</regex>                             <!--<    US - keep last  -->
+        <regex>(\\[|\\()[\\w\\-\\.\\s]{5,}(\\[|\\()</regex> <!--<    Stuff in brackets/parenths, not a year    -->
+        <regex>(\\[|\\()[a-z\\s]{0,}(\\]|\\))</regex> <!--<    Letters in brackets/parenths    -->
+        <regex> (deu|eng|ita|spa|swe|rus)</regex> <!--<    Languages   -->
+        <regex>(10|7|4)(80|20)(p|i)</regex> <!--<    Aspect/Resolution   -->
+        <regex>(4|16)(x|\\*)(3|9)</regex> <!--<    Aspect/Resolution   -->
+        <regex> blu(\\-ray|ray|\\sray)</regex> <!--<    Bluray  -->
+        <regex> (ur|unrated|ff)</regex> <!--<    Ratings -->
+        <regex>(director'?s cut)</regex> <!--<    Cuts    -->
+        <regex> (special) edition</regex> <!--<    Editions    -->
+        <regex> us$</regex> <!--<    US - keep if last  -->
         <replace>
             <original_r>(Its ?always ?sunny ?in ?philadelphia|Its ?always ?sunny ?in ?phila|Its ?always ?sunny)</original_r>
             <change_to>It's Always Sunny In Philadelphia</change_to>

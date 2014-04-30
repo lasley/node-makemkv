@@ -18,7 +18,7 @@ class SanitizeTitles
     #   Order of hierarchy
     DIR_HIERARCHY: ['season', 'disc', 'episode']
     @RESERVED_CHAR_MAP: { #   Filesystem reserved char replacement map
-        '/':'-', '\\':'-', ':':'-', '|':'-', 
+        '/':'-', '\\':'-', ':':'-', '|':'-', '\u2013':'-',
         '?':' ', '%':' ', '*':' ', '"':' ', '<':' ', '>':' '
     }
     
@@ -28,7 +28,7 @@ class SanitizeTitles
         @NO_UPPERCASE = ['the', 'a', 'an', 'of', 'by' , 'up' , 'is' , 'in' , 'at' , 'on' , 'to']
         @DEFAULT_TITLE = 'Title'
         @VID_EXTS = ['mkv', 'mpg', 'avi', 'mp4', 'm4v']
-        @SPACE_CHARS = /[ _\Ð\-\.]+/g
+        @SPACE_CHARS = /[ _\-\.]+/g
         
         @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/ig
         
