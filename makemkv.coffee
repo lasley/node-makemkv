@@ -283,6 +283,8 @@ class MakeMKV
 
                 if callback
                     callback(drives)
+                    #for drive of drives
+                    #    @disc_info(drive, callback)
                 else
                     drives #< Return
             )

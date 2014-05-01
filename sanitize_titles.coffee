@@ -56,8 +56,12 @@ class SanitizeTitles
     #   @return list    [sanitized,volume_info]
     do_sanitize: (title, fallbacks=[]) =>
         
+        console.log(title)
+        
         for change_to, change_from of @RESERVED_CHAR_MAP
             title = title.replace(change_from, change_to)
+        
+        console.log(title)
         
         #   Extract title info
         volume_info = @volume_info(title)

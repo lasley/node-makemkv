@@ -312,10 +312,10 @@ class MakeMKVClient
         ##  UI function to (un)collapse panel
         #   @param  obj panel   Bootstrap3 Panel obj
         panel = $(panel)
-        body = $(panel.children('.panel-body')[0])
+        collapse = $(panel.children('.panel-body, .panel-footer'))
         glyph =  $(panel.find('.glyphicon')[0])
         
-        body.toggleClass('hidden')
+        collapse.toggleClass('hidden')
         glyph.toggleClass('glyphicon-minus')
         glyph.toggleClass('glyphicon-plus')
         
