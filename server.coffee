@@ -8,7 +8,6 @@
 #   @website    https://dlasley.net/blog/projects/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id: link_checker.py,v 12d42dd25501 2013/10/11 20:29:34 dlasley $
 ###
 __version__ = "$Revision: 12d42dd25501 $"
 

@@ -8,7 +8,6 @@
 #   @website    https://dlasley.net/blog/projects/remote-makemkv/
 #   @package    remote-makemkv
 #   @license    GPLv3
-#   @version    $Id: remote_makemkv_server.py 102 2013-02-06 01:27:56Z dave@dlasley.net $
 ###
 
 class MakeMKVClient
