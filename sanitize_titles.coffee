@@ -18,7 +18,7 @@ class SanitizeTitles
     #   Order of hierarchy
     DIR_HIERARCHY: ['season', 'disc', 'episode']
     @RESERVED_CHAR_MAP: { #   Filesystem reserved char replacement map
-        '/':'-', '\\':'-', ':':'-', '|':'-', '\u2012':'-', '\u2013':'-', '\u2014':'-',
+        '/':'-', '\\':'-', ':':'-', '|':'-',
         '?':' ', '%':' ', '*':' ', '"':' ', '<':' ', '>':' '
     }
     
@@ -28,7 +28,7 @@ class SanitizeTitles
         @NO_UPPERCASE = ['the', 'a', 'an', 'of', 'by' , 'up' , 'is' , 'in' , 'at' , 'on' , 'to']
         @DEFAULT_TITLE = 'Title'
         @VID_EXTS = ['mkv', 'mpg', 'avi', 'mp4', 'm4v']
-        @SPACE_CHARS = /[ _\-\.]+/g
+        @SPACE_CHARS = /[ _\-\.\u2013]+/g
         
         @FORMAT_SEASON = /[, ]+(e|d|s|v|t)(pisode|isc|isk|eason|eries|olume|ol|rack|itle)? ?([0-9]{1,2})/ig
         
@@ -71,9 +71,9 @@ class SanitizeTitles
                     if not volume_info[key]
                         volume_info[key] = val
         
-        #   regex-->title_case->format_season->_strip_spaces->return
-        volume_info['sanitized'] = @_do_title_case(@do_regexes(volume_info['sanitized']))
-        @_strip_spaces(@format_season(volume_info))
+        #   regex-->_strip_spaces->title_case->format_season->return
+        volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
+        @format_season(volume_info)
         
     ##  Loop regexes from XML, replace
     #   @param  Str title  Input
@@ -165,9 +165,9 @@ class SanitizeTitles
                 if ROMAN_NUMERAL_REGEX.test(word) #<   Cap if Roman Numeral
                     out.push(word.toUpperCase())
                 else if word not in @NO_UPPERCASE #<   Cap first letter of good words
-                    out.push(word.charAt(0).toUpperCase() + word.slice(1))
+                    out.push(word[0].toUpperCase() + word[1..])
                 else #< No cap
-                    if word == 'the' and not out.length #< Kill `the` if it is first word
+                    if not out.length and word == 'the' #< Kill `the` if it is first word
                         the_ = true
                     else
                         out.push(word)
