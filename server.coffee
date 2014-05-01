@@ -9,7 +9,6 @@
 #   @package    remote-makemkv
 #   @license    GPLv3
 ###
-__version__ = "$Revision: 12d42dd25501 $"
 
 http = require('http')
 io = require('socket.io')

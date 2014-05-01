@@ -9,7 +9,6 @@
 #   @package    remote-makemkv
 #   @license    GPLv3
 ###
-__version__ = '$Revision:$'
 
 fs = require('fs')
 {EventEmitter} = require('events')
