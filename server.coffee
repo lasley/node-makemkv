@@ -69,20 +69,19 @@ class MakeMKVServer extends MakeMKV
         #   Bind socket actions on client connect
         @socket.on('connection', (client) =>
             
-            #   Send cache to client
-            @display_cache((msgs)=>
-                for msg in msgs 
-                    single_broadcast(msg)
-            )
-            
             single_broadcast = (data) => @do_emit(@socket, data)
             
+            #   Send cache to client
+            _display_cache = () =>
+                @display_cache((msgs)=>
+                    for msg in msgs 
+                        single_broadcast(msg)
+                )
+                
+            _display_cache() #< Actually send it
+            
             client.on('display_cache', (data) =>
-                #   Send cache to client
-                #@display_cache((msgs)=>
-                #    for msg in msgs 
-                #        single_broadcast(msg)
-                #)
+                _display_cache()
             )
             
             #   User has sent command to change save_dir
@@ -94,21 +93,21 @@ class MakeMKVServer extends MakeMKV
             #   User has sent command to scan drives
             client.on('scan_drives', (data) =>
                 console.log('scanning drives')
-                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':'all'}})
+                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':'all',"busy":true}})
                 @scan_drives(single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
                 console.log('getting disc info for', data)
-                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data}})
+                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
                 @disc_info(data, single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
                 console.log('getting disc info for', data)
-                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data}})
+                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
                 @rip_track(data['save_dir'], data['drive_id'],
                                    data['track_ids'], single_broadcast)
             )

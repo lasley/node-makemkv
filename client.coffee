@@ -11,16 +11,43 @@
 ###
 
 class MakeMKVClient
-
+    
+    # Socket.io already has this built in to a point, just not for long periods
+    RECONNECT_MS = 1000000
+    
     constructor: (bind=true) -> 
         #   Construct the socket, set callbacks
         #   @param  bool    bind    Bind the buttons? Default, yes
-        @socket = io.connect(window.location.host)
+        
+        dc_err = () =>
+            @_error('Server Unavailable', 'The server is unavailable. Attempting to reconnect.')
+        
+        #   (re)connect to socket, clear interval
+        init_socket = () =>
+
+            if not @socket
+                @socket = io.connect(window.location.host)
+                
+                if @connected
+                    $('#err_modal').modal('hide')
+                else
+                    dc_err()
+                    @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
+            else
+                @socket.socket.connect()
+                if @connected
+                    $('#err_modal').modal('hide')
+                else
+                    dc_err()
+                    @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
+                
+        
+        @connected = false
+        init_socket()
         
         @socket.on('connect', () =>
+            @connected = true
             console.log('Connected to server')
-            @socket.send('Client Connected')
-            @socket.emit('display_cache', true)
         )
         
         #   Bind to receive/process socket cmds
@@ -31,12 +58,16 @@ class MakeMKVClient
         @socket.on('_panel_disable', (data) => @panel_disable_socket(data))
         @socket.on('_error', (data) => @_error(data.data.type, data.data.msg))
         
+        @socket.on('disconnect', () =>
+            @connected = false
+            dc_err()
+            @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
+            console.log('Server D/C')
+        )
+        
         #   Socket debugging
         @socket.on('message', (data) =>
-            console.log('Client sent: ', data);
-        )
-        @socket.on('disconnect', () ->
-            console.log('d/c');
+            console.log('Client sent: ', data)
         )
         
         
