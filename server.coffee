@@ -19,8 +19,7 @@ fs = require('fs')
 CoffeeScript = require('coffee-script')
 MakeMKV = require('./makemkv.coffee')
 
-
-class MakeMKVServer
+class MakeMKVServer extends MakeMKV
 
     CLIENT_FILE: __dirname + '/client.html'
     SUCCESS_STRING: 'success'
@@ -28,7 +27,7 @@ class MakeMKVServer
 
     constructor: (port) ->
         
-        @MakeMKV = new MakeMKV(false)
+        super(false) #< MakeMKV obj init
         @cache = {}
         @change_out_dir() #< Prime the out dir cache
         
@@ -64,15 +63,15 @@ class MakeMKVServer
                         #   @todo..make an icon
                         res.end('Success')
                         
-        ).listen(@MakeMKV.LISTEN_PORT)
+        ).listen(@LISTEN_PORT)
         
-        socket = io.listen(server)
-        console.log('Listening on ' + @MakeMKV.LISTEN_PORT)
+        @socket = io.listen(server)
+        console.log('Listening on ' + @LISTEN_PORT)
         
         #   Bind socket actions on client connect
-        socket.on('connection', (client) =>
+        @socket.on('connection', (client) =>
             
-            single_broadcast = (data) => @do_emit(socket, data)
+            single_broadcast = (data) => @do_emit(@socket, data)
             
             client.on('display_cache', (data) =>
                 #   Send cache to client
@@ -91,19 +90,19 @@ class MakeMKVServer
             #   User has sent command to scan drives
             client.on('scan_drives', (data) =>
                 console.log('scanning drives')
-                @MakeMKV.scan_drives(single_broadcast)
+                @scan_drives(single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
                 console.log('getting disc info for', data)
-                @MakeMKV.disc_info(data, single_broadcast)
+                @disc_info(data, single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
                 console.log('getting disc info for', data)
-                @MakeMKV.rip_track(data['save_dir'], data['drive_id'],
+                @rip_track(data['save_dir'], data['drive_id'],
                                    data['track_ids'], single_broadcast)
             )
             
@@ -129,7 +128,7 @@ class MakeMKVServer
                     cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
         
         #   Disable busy drive panels
-        for disc_id, busy of @MakeMKV.busy_devices
+        for disc_id, busy of @busy_devices
             cached.push({'cmd':'_panel_disable', 'data':{'disc_id':disc_id, 'busy':busy}})
         
         if callback
@@ -169,19 +168,28 @@ class MakeMKVServer
     ##  Register change to save directory (UI)
     change_out_dir: () =>
         
-        @_cache_data('change_out_dir', @MakeMKV.save_to)
+        @_cache_data('change_out_dir', @save_to)
 
     ##  Save change to save directory
     #   @param  str dir New save dir
     save_out_dir: (dir, callback=false) =>
         
-        @MakeMKV.save_to = dir
+        @save_to = dir
         @change_out_dir()
         
         if callback
-            callback(@MakeMKV.save_to)
+            callback(@save_to)
         else
-            @MakeMKV.save_to
+            @save_to
         
+    ##  Error handler
+    #   @param  str type    Type of error
+    #   @param  str msg     Error msg
+    error: (type, msg) =>
+        @
         
 server = new MakeMKVServer()
+
+server.emitter.on('error', (type, msg) =>
+    server.do_emit(server.socket, {'cmd':'_error', 'data':{'type':type, 'msg':msg}})
+)

@@ -13,13 +13,17 @@
 __version__ = '$Revision:$'
 
 fs = require('fs')
+{EventEmitter} = require('events')
 spawn = require('child_process').spawn
 ini = require('ini')
 SanitizeTitles = require(__dirname + '/sanitize_titles.coffee')
 
 class MakeMKV
 
-    constructor: (save_to) -> 
+    constructor: (save_to) ->
+        
+        @emitter = new EventEmitter
+        
         @NEWLINE_CHAR = '\n'
         @COL_PATTERN = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
         @busy_devices = {}
@@ -218,6 +222,10 @@ class MakeMKV
                                         
                     #   Count the track parts (Audio/Video/Subtitle)
                     for track_id of info_out['data']['tracks']
+                        
+                        smap = info_out['data']['tracks'][track_id]['Segments Map'].replace(/,/g, ' ')
+                        info_out['data']['tracks'][track_id]['Segments Map'] = smap
+                        
                         for part_id of info_out['data']['tracks'][track_id]['track_parts']
                             track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                             info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
@@ -307,9 +315,9 @@ class MakeMKV
             return_ = return_.join('')
             
             if return_.indexOf('Evaluation period has expired') != -1
-                throw 'EvalExpired'
-            
-            callback(code, return_.split(@NEWLINE_CHAR))
+                @emitter.emit('error', 'EvalExpired', 'MakeMKV Evaluation Period Has Expired. Please obtain a new license key at <a href="http://www.makemkv.com/">http://www.makemkv.com/</a>.')
+            else
+                callback(code, return_.split(@NEWLINE_CHAR))
         )
     
     ##  Create dir if not exists

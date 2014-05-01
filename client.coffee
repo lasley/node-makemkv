@@ -30,6 +30,7 @@ class MakeMKVClient
         @socket.on('disc_info', (data) => @disc_info(data))
         @socket.on('rip_track', (data) => @rip_track(data))
         @socket.on('_panel_disable', (data) => @panel_disable_socket(data))
+        @socket.on('_error', (data) => @_error(data.data.type, data.data.msg))
         
         #   Socket debugging
         @socket.on('message', (data) =>
@@ -94,7 +95,7 @@ class MakeMKVClient
         #   @param  str type Error type, modal title
         #   @param  str msg  Error message, modal body
         document.getElementById('err_title').innerHTML = type
-        document.getElementById('err_body').innerHTML = type
+        document.getElementById('err_body').innerHTML = msg
         $('#err_modal').modal()
         
     _socket_cmd: (cmd, data) =>
