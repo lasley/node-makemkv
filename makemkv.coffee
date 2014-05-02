@@ -268,7 +268,8 @@ class MakeMKV
             #   Spawn MakeMKV with callback
             @_spawn_generic(['-r', 'info'], (code, drive_scan)=>
                 for line in drive_scan
-                    if line[0..3] == 'DRV:' and line.indexOf('/dev/') != -1 #<  DRV to make sure it's drive output, /dev to make sure that there is a drive
+                    #   DRV to make sure it's drive output, /dev to make sure that there is a drive
+                    if line[0..3] == 'DRV:' and line.indexOf('/dev/') != -1 
                         info = line.split(@COL_PATTERN)
                         #   Assign drive_location, strip quotes
                         drive_location = info[info.length - 2][1..-2]

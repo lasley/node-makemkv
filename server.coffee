@@ -69,7 +69,7 @@ class MakeMKVServer extends MakeMKV
         #   Bind socket actions on client connect
         @socket.on('connection', (client) =>
             
-            single_broadcast = (data) => @do_emit(@socket, data)
+            single_broadcast = (data) => @_do_emit(@socket, data)
             
             #   Send cache to client
             _display_cache = () =>
@@ -93,21 +93,21 @@ class MakeMKVServer extends MakeMKV
             #   User has sent command to scan drives
             client.on('scan_drives', (data) =>
                 console.log('scanning drives')
-                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':'all',"busy":true}})
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':'all',"busy":true}})
                 @scan_drives(single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
                 console.log('getting disc info for', data)
-                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
                 @disc_info(data, single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
                 console.log('getting disc info for', data)
-                @do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
                 @rip_track(data['save_dir'], data['drive_id'],
                                    data['track_ids'], single_broadcast)
             )
@@ -145,7 +145,7 @@ class MakeMKVServer extends MakeMKV
     ##  Signal emit
     #   @param  socket  socket  socket
     #   @param  dict    msg     Msg, {'cmd':(str)signal_to_emit,'data':(dict)}
-    do_emit: (socket, msg) ->
+    _do_emit: (socket, msg) ->
         
         cmd = msg['cmd']
         data = msg['data']
@@ -154,15 +154,15 @@ class MakeMKVServer extends MakeMKV
             data = data['data'] #< Pull and save it instead
             
         namespace = if data['disc_id'] then data['disc_id'] else 'none'
-        data = @_cache_data(cmd, data, namespace)
-        socket.sockets.emit(cmd, data)
+        data = @cache_data(cmd, data, namespace)
+        socket.sockets.emit(cmd, data)    
 
     ##  Cache data to variable for when clients join
     #   @param  str     cmd     Command that will be emitted
     #   @param  mixed   data    Data obj
     #   @param  str     namespace   Namespace to cache data in (multiple single drive cmds)
     #   @return dict    data with cache_refreshed date {'data':mixed, 'cache_refreshed':Date}
-    _cache_data: (cmd, data, namespace='none') =>
+    cache_data: (cmd, data, namespace='none') =>
         
         if typeof(@cache[cmd]) != 'object'
             @cache[cmd] = {}
@@ -174,7 +174,7 @@ class MakeMKVServer extends MakeMKV
     ##  Register change to save directory (UI)
     change_out_dir: () =>
         
-        @_cache_data('change_out_dir', @save_to)
+        @cache_data('change_out_dir', @save_to)
 
     ##  Save change to save directory
     #   @param  str dir New save dir
@@ -197,5 +197,5 @@ class MakeMKVServer extends MakeMKV
 server = new MakeMKVServer()
 
 server.emitter.on('error', (type, msg) =>
-    server.do_emit(server.socket, {'cmd':'_error', 'data':{'type':type, 'msg':msg}})
+    server._do_emit(server.socket, {'cmd':'_error', 'data':{'type':type, 'msg':msg}})
 )
