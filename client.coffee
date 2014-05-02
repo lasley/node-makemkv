@@ -73,19 +73,23 @@ class MakeMKVClient
         
         if bind
             @_bind()
-            
+    
+    #   Bind client events
     _bind: () =>
-        #   Bind client events
+        
+        #   Send new outdir to server
         $('#send_out_dir').on('click', (event) =>
             new_dir = $('#output_dir').val()
             @_socket_cmd('change_out_dir', new_dir)
         )
         
+        #   Refresh all button
         $('#refresh_all').on('click', (event) =>
             @_panel_disable()
             @_socket_cmd('scan_drives', true)
         )
-
+        
+        #   Disc panel buttons (getinfo, rip)
         $('#main').on('click', '.get-info', (event) =>
             drive_id = event.currentTarget.getAttribute('data-drive-id')
             @_panel_disable($(document.getElementById(drive_id)))
@@ -111,36 +115,42 @@ class MakeMKVClient
             })
         )
         
+        #   Select all checks (in disc panel)
+        $('#main').on('change', '.rip-toggle', (event) ->
+            $(event.currentTarget).parents('table').find('.rip-chk').attr('checked', event.currentTarget.checked)
+        )
+        
+        #   Panel collapse/expand
         $('#main').on('click', '.panel-title', (event) =>
             panel = document.getElementById(event.currentTarget.id.split('_')[0]) #< id=disc_title
             @_panel_collapse(panel)
         )
         
-        $('#main').on('change', '.rip-toggle', (event) ->
-            $(event.currentTarget).parents('table').find('.rip-chk').attr('checked', event.currentTarget.checked)
-        )
         
+    #   Display error modal
+    #   @param  str type Error type, modal title
+    #   @param  str msg  Error message, modal body 
     _error: (type, msg) ->
-        #   Display error modal
-        #   @param  str type Error type, modal title
-        #   @param  str msg  Error message, modal body
+        
         document.getElementById('err_title').innerHTML = type
         document.getElementById('err_body').innerHTML = msg
         $('#err_modal').modal()
-        
+    
+    #   Send JSON.stringify(data)
+    #   @param  str     cmd     Command that is being performed
+    #   @param  mixed   data    Data to send
     _socket_cmd: (cmd, data) =>
-        #   Send JSON.stringify(data)
-        #   @param  str     cmd     Command that is being performed
-        #   @param  mixed   data    Data to send
+        
         @socket.emit(cmd, data)
     
+    #   Create a new el
+    #   @param  obj parent  perform parent.appendChild(this)
+    #   @param  str class_  Class of el
+    #   @param  str type_   Type of element to create
+    #   @param  obj kwargs  Dict of attrs to set
+    #   @return obj 
     _new_el: (parent=false, class_=false, type_='div', kwargs={}) ->
-        #   Create a new el
-        #   @param  obj parent  perform parent.appendChild(this)
-        #   @param  str class_  Class of el
-        #   @param  str type_   Type of element to create
-        #   @param  obj kwargs  Dict of attrs to set
-        #   @return obj 
+        
         el = $(document.createElement(type_))
         
         if class_
@@ -160,19 +170,20 @@ class MakeMKVClient
         
         el
     
+    #   Callback for scan_drives cmd
+    #       Displays all drive data
+    #   @param  dict    socket_in  Data dict passed from server
     scan_drives: (socket_in) =>
-        #   Callback for scan_drives cmd
-        #       Displays all drive data
-        #   @param  dict    socket_in  Data dict passed from server
         
         data = socket_in['data']
         
+        #   Create a new disc panel on UI
+        #   @param  str drive       Drive ID
+        #   @param  str disc_name   Disc ID
+        #   @param  int width       Grid width of panel container
+        #   @return DivElement
         _new_disc_panel = (drive, disc_name, width) =>
-            #   Create a new disc panel on UI
-            #   @param  str drive       Drive ID
-            #   @param  str disc_name   Disc ID
-            #   @param  int width       Grid width of panel container
-            #   @return DivElement
+            
             container = @_new_el(false, 'col-lg-' + width)
             panel = @_new_el(container, 'panel panel-default', 'div', {id:drive})
             heading = @_new_el(panel, 'panel-heading')
@@ -228,9 +239,10 @@ class MakeMKVClient
         
         @_panel_disable(false, false)
             
+    #   Callback for disc_info cmd
+    #       Displays disc info in disc pane
+    #   @param  dict    socket_in  Data dict passed from server
     disc_info: (socket_in) =>
-        #   Callback for disc_info cmd
-        #       Displays disc info in disc pane
         
         data = socket_in['data']
         
@@ -317,9 +329,10 @@ class MakeMKVClient
         @_panel_disable(panel, false)
         $(panel.find('.rip-tracks')[0]).removeClass('hidden')
         
+    #   Receive track rip status, output to GUI
+    #   @param  dict    socket_in    Data dict passed from server
     rip_track: (socket_in) =>
-        #   Receive track rip status, output to GUI
-        #   @param  dict    socket_in    Data dict passed from server
+        
         console.log(socket_in)
         
         data = socket_in['data']
@@ -332,16 +345,16 @@ class MakeMKVClient
             chk_box = panel.find('input[data-track-id="' + track_id + '"]')
             $(chk_box).parent().parent().removeClass().addClass(result)
             
-
-    change_out_dir: (socket_in) ->
-        #   Receive output dir and change on display
-        #   @param  dict    socket_in    Data dict passed from server
+    #   Receive output dir and change on display
+    #   @param  dict    socket_in    Data dict passed from server
+    change_out_dir: (socket_in) ->    
         
         document.getElementById('output_dir').value = socket_in['data']
-        
+    
+    ##  UI function to (un)collapse panel
+    #   @param  obj panel   Bootstrap3 Panel obj
     _panel_collapse: (panel) ->
-        ##  UI function to (un)collapse panel
-        #   @param  obj panel   Bootstrap3 Panel obj
+        
         panel = $(panel)
         collapse = $(panel.children('.panel-body, .panel-footer'))
         glyph =  $(panel.find('.glyphicon')[0])
@@ -359,7 +372,9 @@ class MakeMKVClient
         else if document.selection #< IE
             document.selection.empty()
             
-    panel_disable_socket: (data) =>
+    ##  Disable panel with socket received data
+    #   @param  dict    socket_in   Data dict passed from server
+    panel_disable_socket: (socket_in) =>
         
         if data.disc_id == 'all'
             panel = false
@@ -371,6 +386,9 @@ class MakeMKVClient
         else
             @_panel_disable(panel, data.busy)
             
+    ##  Disable a panel's input els
+    #   @param  $(obj)  panel   Panel jQuery obj, false to select all panels
+    #   @param  bool    disable False to enable panel
     _panel_disable: (panel=false, disable=true) ->
         
         if not panel
