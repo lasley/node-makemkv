@@ -15,9 +15,9 @@ class MakeMKVClient
     # Socket.io already has this built in to a point, just not for long periods
     RECONNECT_MS = 1000000
     
+    #   Construct the socket, set callbacks
+    #   @param  bool    bind    Bind the buttons? Default, yes
     constructor: (bind=true) -> 
-        #   Construct the socket, set callbacks
-        #   @param  bool    bind    Bind the buttons? Default, yes
         
         dc_err = () =>
             @_error('Server Unavailable', 'The server is unavailable. Attempting to reconnect.')
@@ -61,6 +61,7 @@ class MakeMKVClient
         @socket.on('disconnect', () =>
             @connected = false
             dc_err()
+            document.getElementById('main').innerHTML = ''
             @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
             console.log('Server D/C')
         )
@@ -303,7 +304,8 @@ class MakeMKVClient
             col = @_new_el(row, false, 'td')
             @_new_el(col, 'rip-chk', 'input', {
                 type:'checkbox', 'data-track-id':track_id,
-                'data-autochecked':track_data['autochk']
+                'data-autochecked':track_data['_autochk'],
+                checked:track_data['_autochk']
             })
             
             col = @_new_el(row, false, 'td', {html:track_id})

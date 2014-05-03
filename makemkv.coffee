@@ -27,14 +27,15 @@ class MakeMKV
         @busy_devices = {}
         
         SETTINGS_PATH = __dirname + '/server_settings.ini'
-        SERVER_SETTINGS = ini.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
+        SETTINGS_DATA = ini.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
         
-        @SELECTION_PROFILE = SERVER_SETTINGS.selection_profile
-        @ATTRIBUTE_IDS = SERVER_SETTINGS.attibute_ids
+        @SELECTION_PROFILE = SETTINGS_DATA.selection_profile
+        @ATTRIBUTE_IDS = SETTINGS_DATA.attibute_ids
 
-        @USER_SETTINGS = SERVER_SETTINGS.settings
+        @USER_SETTINGS = SETTINGS_DATA.settings
         @MAKEMKVCON_PATH = @USER_SETTINGS.makemkvcon_path
         @LISTEN_PORT = @USER_SETTINGS.listen_port
+        @OUTLIER_MODIFIER = @USER_SETTINGS.outlier_modifier
 
         @sanitizer = new SanitizeTitles()
         
@@ -47,13 +48,36 @@ class MakeMKV
     ##  Choose the tracks that should be autoselected
     #   @param  dict    disc_info   As returned in @disc_info()
     #   @return dict    disc_info with injected `autoselect` key in every track (bool)
-    choose_tracks: (disc_info, callback=false) ->
+    choose_tracks: (disc_info, callback=false) =>
         
-        track_sizes = {}
+        track_sizes = []
         for track_id, track_data of disc_info.tracks
-            track_sizes[track_id] = track
-
- 
+            track_sizes.push([track_id, track_data['Disk Size Bytes']]) #< for sorting
+        
+        track_sizes.sort((a, b) -> a[1] - b[1])
+        
+        #   Calc upper quartile
+        high_mid = (track_sizes.length - 1) * 0.75
+        if track_sizes[high_mid] #< Len was odd number
+            uq = track_sizes[high_mid][1]
+        else #< Len was even
+            ceil = Math.ceil(high_mid)
+            floor = Math.floor(high_mid)
+            uq = (track_sizes[ceil][1] + track_sizes[floor][1]) / 2
+        
+        #   If OUTLIER_MODIFIER lower than the uq, probably not a good file...
+        console.log(uq)
+        low_num = uq * @OUTLIER_MODIFIER
+        console.log(low_num)
+        for track in track_sizes
+            console.log(track)
+            _bol = if track[1] >= low_num then true else false
+            disc_info['tracks'][track[0]]['_autochk'] = _bol
+                
+        if callback
+            callback(disc_info)
+        else
+            disc_info
         
     ##  Determine which discs are being used
     #   @param  int  disc_id Disc ID
@@ -241,6 +265,8 @@ class MakeMKV
                             fallbacks.push(info_out['data']['disc'][type_])
                             
                     info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
+                    
+                    info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
 
                     if callback
                         callback(info_out)
