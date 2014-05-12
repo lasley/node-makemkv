@@ -226,14 +226,14 @@ class MakeMKVClient
         
         #   Get Disc Info Button
         refresh_btn = @_new_el(
-            @_new_el(footer_div, 'col-md-1'),
+            @_new_el(footer_div, 'col-md-2'),
             'btn btn-default disc-info-btn get-info', 'button',
             {'data-drive-id':drive, 'type':'button', html:'Refresh Disc',}
         )
 
         #   Rip Tracks Button
         rip_btn = @_new_el(
-            @_new_el(footer_div, 'col-md-1 col-md-offset-9'),
+            @_new_el(footer_div, 'col-md-2 col-md-offset-7'),
             'btn btn-default disc-info-btn hidden rip-tracks', 'button',
             {'data-drive-id':drive, 'type':'button', html:'Rip Track(s)',}
         )
