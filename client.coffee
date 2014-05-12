@@ -250,7 +250,9 @@ class MakeMKVClient
         main_div.innerHTML = ''
         
         for drive, disc of data
-            @_panel_shift(@new_disc_panel(drive, drive + ': ' + disc))
+            panel = @new_disc_panel(drive, drive + ': ' + disc)
+            panel.addClass('disc_')
+            @_panel_shift(panel)
         
         @_panel_disable(false, false)
     
@@ -461,7 +463,7 @@ class MakeMKVClient
     _panel_disable: (panel=false, disable=true) ->
         
         if not panel
-            panel = $('#main')
+            panel = $('.disc_')
             $('.disc-btn').prop('disabled', disable)
             
         panel.find(':input').prop('disabled', disable)

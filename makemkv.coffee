@@ -134,8 +134,8 @@ class MakeMKV
             
             else
                 
-                cmd = if '/dev/' in disc_id then 'dev:' else 'file:'
-                
+                cmd = if disc_id.indexOf('/dev/') == 0 then 'dev:' else 'file:'
+
                 @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
                                 cmd+disc_id, track_id, save_dir, ], (code, data) =>
                     
