@@ -133,9 +133,11 @@ class MakeMKV
                     ripped_tracks #< Return
             
             else
-    
+                
+                cmd = if '/dev/' in disc_id then 'dev:' else 'file:'
+                
                 @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
-                                'dev:'+disc_id, track_id, save_dir, ], (code, data) =>
+                                cmd+disc_id, track_id, save_dir, ], (code, data) =>
                     
                     if code == 0
                         
@@ -172,117 +174,6 @@ class MakeMKV
         else
             false
 
-    ##  Get disc info
-    #   @param  int     disc_id     Disc ID
-    #   @param  func    callback    Callback function, will receive info_out as param
-    #   @return dict    info_out    Disc/track information
-    disc_info: (disc_id, callback=false) =>
-        
-        if @toggle_busy(disc_id, true) #< If disc not busy, set busy and go
-            
-            info_out = {
-                'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, 'cmd':'disc_info'
-            }
-            return_ = []
-            errors = []
-            
-            @_spawn_generic(['--noscan', '-r', 'info', 'dev:'+disc_id, ], (code, disc_info)=>
-                
-                if code == 0
-                    for line in disc_info
-                        
-                        #   Loop the line split by COL_PATTERN, take every 2 starting at index 1
-                        split_line = []
-                        for col in line.split(@COL_PATTERN)[1..] by 2
-                            split_line.push(col)
-
-                        #   @todo - fix this atrocious code
-                        if split_line.length > 1 and split_line[0] != 'TCOUNT'
-    
-                            switch(line[0])
-                                
-                                when 'M' #< MSG
-                                    msg_id = split_line[0].split(':').pop()
-                                    
-                                    #switch(msg_id)
-                                    #    
-                                    #    when '3307' #< Track added, capture original name
-                                    #        #   2112.m2ts has been ... as #123
-                                    #        matches = split_line[3].match(/(\d+\.[\w\d]+) .*? #(\d)/)
-                                    #        title_map[matches[2]] = matches[1]
-                                
-                                when 'C' #< CINFO (Disc Info)
-                                    attr_id = split_line[0].split(':').pop()
-                                    attr_val = split_line.pop()[1..-2]
-                                    info_out['data']['disc'][ \
-                                        if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
-                                    ] = attr_val
-                                
-                                when 'T' #< Track
-                                    track_id = split_line[0].split(':').pop()
-                                    if track_id not of info_out['data']['tracks']
-                                        track_info = info_out['data']['tracks'][track_id] = {
-                                            'cnts':{'Subtitles':0, 'Video':0, 'Audio':0, }
-                                        }
-                                    attr_id = split_line[1]
-                                    track_info[ \
-                                        if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
-                                    ] = split_line.pop()[1..-2]
-                                
-                                when 'S' #< Track parts
-                                    track_id = split_line[0].split(':').pop()
-                                    track_part_id = split_line[1]
-                                    if 'track_parts' not of info_out['data']['tracks'][track_id]
-                                        info_out['data']['tracks'][track_id]['track_parts'] = {}
-                                    if track_part_id not of info_out['data']['tracks'][track_id]['track_parts']
-                                        info_out['data']['tracks'][track_id]['track_parts'][track_part_id] = {}
-                                    track_info = info_out['data']['tracks'][track_id]['track_parts'][track_part_id]
-                                    attr_id = split_line[2]
-                                    track_info[ \
-                                        if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
-                                    ] = split_line.pop()[1..-2]
-                                        
-                    #   Count the track parts (Audio/Video/Subtitle)
-                    for track_id of info_out['data']['tracks']
-                        
-                        smap = info_out['data']['tracks'][track_id]['Segments Map'].replace(/,/g, ' ')
-                        info_out['data']['tracks'][track_id]['Segments Map'] = smap
-                        
-                        for part_id of info_out['data']['tracks'][track_id]['track_parts']
-                            track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
-                            info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
-                    
-                    #   Release disc, sanitize disc name, push into cache
-                    @toggle_busy(disc_id)
-
-                    #   Sanitize Title Names
-                    title = info_out['data']['disc']['Name']
-                    fallbacks = []
-                    fallbacks_ = ['Tree Info', 'Volume Name']
-                    
-                    for type_ in fallbacks_
-                        if info_out['data']['disc'][type_]
-                            fallbacks.push(info_out['data']['disc'][type_])
-                            
-                    info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
-                    
-                    info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
-
-                    if callback
-                        callback(info_out)
-                    else
-                        info_out #< Return
-                    
-                else
-                    errors = errors.join('')
-                    console.log('disc_info failed on #{disc_id}. Output was:{@NEWLINE_CHAR}'+
-                                '"#{errors}"{@NEWLINE_CHAR}')
-                    false
-            )
-            
-        else
-            false
-
     ##  Scan drives, return info. Also sets @drive_map
     #   @param  func    callback Callback function, will receive drives as param
     #   @return dict    drives  Dict keyed by drive index, value is movie name
@@ -315,6 +206,156 @@ class MakeMKV
                 else
                     drives #< Return
             )
+
+
+    ##  Get disc info
+    #   @param  int     disc_id     Disc ID
+    #   @param  func    callback    Callback function, will receive info_out as param
+    #   @return dict    info_out    Disc/track information
+    disc_info: (disc_id, callback=false) =>
+        
+        if @toggle_busy(disc_id, true) #< If disc not busy, set busy and go
+            
+            info_out = {
+                'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, 'cmd':'disc_info'
+            }
+            return_ = []
+            errors = []
+            
+            @_spawn_generic(['--noscan', '-r', 'info', 'dev:'+disc_id, ], (code, disc_info)=>
+                
+                if code == 0
+                    
+                    @parse_disc_info(disc_info, info_out, callback)
+                    
+                    #   Release disc, sanitize disc name, push into cache
+                    @toggle_busy(disc_id)
+                    
+                else
+                    errors = errors.join('')
+                    console.log('disc_info failed on #{disc_id}. Output was:{@NEWLINE_CHAR}'+
+                                '"#{errors}"{@NEWLINE_CHAR}')
+                    false
+            )
+            
+        else
+            false
+            
+    ##  Get disc info from folder
+    #   @param  str     dir         Dir to scan
+    #   @param  func    callback    Callback function, will receive info_out as param
+    #   @return dict    info_out    Disc/track information (into callback)
+    scan_dir: (dir, callback) =>
+        
+        info_out = {
+            'data':{'disc':{}, 'tracks':{}, 'dir':dir}, 'cmd':'disc_info'
+        }
+        return_ = []
+        errors = []
+        
+        @_spawn_generic(['--noscan', '-r', 'info', 'file:'+dir, ], (code, disc_info)=>
+            
+            if code == 0
+                
+                @parse_disc_info(disc_info, info_out, callback)
+                
+            else
+                errors = errors.join('')
+                console.log('disc_info failed on #{disc_id}. Output was:{@NEWLINE_CHAR}'+
+                            '"#{errors}"{@NEWLINE_CHAR}')
+                false
+        )
+            
+    ##  Parse disc info as returned from MakeMKV
+    #   @param  list    disc_info   Console output from `makemkvcon info`, split by line
+    #   @param  dict    info_out    info_out var initialized in scan_dir or scan_disc
+    #   @param  func    callback    Callback function, will receive info_out as param
+    #   @return dict    info_out    Disc/track information
+    parse_disc_info: (disc_info, info_out, callback=false) =>
+        
+        for line in disc_info
+                        
+            #   Loop the line split by COL_PATTERN, take every 2 starting at index 1
+            split_line = []
+            for col in line.split(@COL_PATTERN)[1..] by 2
+                split_line.push(col)
+
+            #   @todo - fix this atrocious code
+            if split_line.length > 1 and split_line[0] != 'TCOUNT'
+
+                switch(line[0])
+                    
+                    when 'M' #< MSG
+                        msg_id = split_line[0].split(':').pop()
+                        
+                        #switch(msg_id)
+                        #    
+                        #    when '3307' #< Track added, capture original name
+                        #        #   2112.m2ts has been ... as #123
+                        #        matches = split_line[3].match(/(\d+\.[\w\d]+) .*? #(\d)/)
+                        #        title_map[matches[2]] = matches[1]
+                    
+                    when 'C' #< CINFO (Disc Info)
+                        attr_id = split_line[0].split(':').pop()
+                        attr_val = split_line.pop()[1..-2]
+                        info_out['data']['disc'][ \
+                            if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
+                        ] = attr_val
+                    
+                    when 'T' #< Track
+                        track_id = split_line[0].split(':').pop()
+                        if track_id not of info_out['data']['tracks']
+                            track_info = info_out['data']['tracks'][track_id] = {
+                                'cnts':{'Subtitles':0, 'Video':0, 'Audio':0, }
+                            }
+                        attr_id = split_line[1]
+                        track_info[ \
+                            if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
+                        ] = split_line.pop()[1..-2]
+                    
+                    when 'S' #< Track parts
+                        track_id = split_line[0].split(':').pop()
+                        track_part_id = split_line[1]
+                        if 'track_parts' not of info_out['data']['tracks'][track_id]
+                            info_out['data']['tracks'][track_id]['track_parts'] = {}
+                        if track_part_id not of info_out['data']['tracks'][track_id]['track_parts']
+                            info_out['data']['tracks'][track_id]['track_parts'][track_part_id] = {}
+                        track_info = info_out['data']['tracks'][track_id]['track_parts'][track_part_id]
+                        attr_id = split_line[2]
+                        track_info[ \
+                            if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
+                        ] = split_line.pop()[1..-2]
+                            
+        #   Count the track parts (Audio/Video/Subtitle)
+        
+        console.log(info_out)
+        
+        for track_id of info_out['data']['tracks']
+            
+            smap = info_out['data']['tracks'][track_id]['Segments Map'].replace(/,/g, ' ')
+            info_out['data']['tracks'][track_id]['Segments Map'] = smap
+            
+            for part_id of info_out['data']['tracks'][track_id]['track_parts']
+                track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
+                info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
+
+        #   Sanitize Title Names
+        title = info_out['data']['disc']['Name']
+        fallbacks = []
+        fallbacks_ = ['Tree Info', 'Volume Name']
+        
+        for type_ in fallbacks_
+            if info_out['data']['disc'][type_]
+                fallbacks.push(info_out['data']['disc'][type_])
+                
+        info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
+        
+        info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
+
+        if callback
+            callback(info_out)
+        else
+            info_out #< Return
 
     ##  Generic Application Spawn
     #   @param  list    args    List of str arguments

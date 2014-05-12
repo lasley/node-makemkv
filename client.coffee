@@ -29,14 +29,14 @@ class MakeMKVClient
                 @socket = io.connect(window.location.host)
                 
                 if @connected
-                    $('#err_modal').modal('hide')
+                    $(document.getElementById('modal')).modal('hide')
                 else
                     dc_err()
                     @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
             else
                 @socket.socket.connect()
                 if @connected
-                    $('#err_modal').modal('hide')
+                    $(document.getElementById('modal')).modal('hide')
                 else
                     dc_err()
                     @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
@@ -55,6 +55,7 @@ class MakeMKVClient
         @socket.on('scan_drives', (data) => @scan_drives(data))
         @socket.on('disc_info', (data) => @disc_info(data))
         @socket.on('rip_track', (data) => @rip_track(data))
+        @socket.on('list_dir', (data) => @list_dir(data))
         @socket.on('_panel_disable', (data) => @panel_disable_socket(data))
         @socket.on('_error', (data) => @_error(data.data.type, data.data.msg))
         
@@ -79,25 +80,30 @@ class MakeMKVClient
     _bind: () =>
         
         #   Send new outdir to server
-        $('#send_out_dir').on('click', (event) =>
+        $(document.getElementById('send_out_dir')).on('click', (event) =>
             new_dir = $('#output_dir').val()
             @_socket_cmd('change_out_dir', new_dir)
         )
         
         #   Refresh all button
-        $('#refresh_all').on('click', (event) =>
+        $(document.getElementById('refresh_all')).on('click', (event) =>
             @_panel_disable()
             @_socket_cmd('scan_drives', true)
         )
         
+        #   Browse button
+        $(document.getElementById('browse_fs')).on('click', (event) =>
+            @list_dir()
+        )
+        
         #   Disc panel buttons (getinfo, rip)
-        $('#main').on('click', '.get-info', (event) =>
+        $(document.getElementById('main')).on('click', '.get-info', (event) =>
             drive_id = event.currentTarget.getAttribute('data-drive-id')
             @_panel_disable($(document.getElementById(drive_id)))
             @_socket_cmd('disc_info', drive_id)
         )
         
-        $('#main').on('click', '.rip-tracks', (event) =>
+        .on('click', '.rip-tracks', (event) =>
             
             drive_id = event.currentTarget.getAttribute('data-drive-id')
             panel = $(document.getElementById(drive_id))
@@ -117,25 +123,48 @@ class MakeMKVClient
         )
         
         #   Select all checks (in disc panel)
-        $('#main').on('change', '.rip-toggle', (event) ->
+        .on('change', '.rip-toggle', (event) ->
             $(event.currentTarget).parents('table').find('.rip-chk').attr('checked', event.currentTarget.checked)
         )
         
         #   Panel collapse/expand
-        $('#main').on('click', '.panel-title', (event) =>
+        .on('click', '.panel-title', (event) =>
             panel = document.getElementById(event.currentTarget.id.split('_')[0]) #< id=disc_title
             @_panel_collapse(panel)
         )
         
+        #   Dir tree
+        $(document.getElementById('dir_tree')).jstree({
+            plugins: ['checkbox'],
+            checkbox: {'keep_selected_style': false},
+            core:{
+                data: {
+                    url: '/list_dir',
+                    type: 'GET',
+                    dataType: 'JSON',
+                    contentType: 'application/json',
+                    data: (node) -> {id: node.id}
+                 }
+        }})
         
+        $(document.getElementById('modal_select')).on('click', (event) =>
+            $(document.getElementById('modal')).modal('hide')
+            clicked = $('a.jstree-clicked')
+            ids = (el.getAttribute('id') for el in clicked.parent('.jstree-node'))
+            @socket.emit('scan_dirs', ids)
+            clicked.removeClass('jstree-clicked').addClass('jstree-checkbox')
+        )
+
     #   Display error modal
     #   @param  str type Error type, modal title
     #   @param  str msg  Error message, modal body 
     _error: (type, msg) ->
         
-        document.getElementById('err_title').innerHTML = type
-        document.getElementById('err_body').innerHTML = msg
-        $('#err_modal').modal()
+        document.getElementById('modal_title').innerHTML = type
+        $(document.getElementById('modal_error')).html(msg).removeClass('hidden')
+        $(document.getElementById('modal_select')).addClass('hidden')
+        $(document.getElementById('dir_tree')).addClass('hidden')
+        $(document.getElementById('modal')).modal('show')
     
     #   Send JSON.stringify(data)
     #   @param  str     cmd     Command that is being performed
@@ -171,89 +200,107 @@ class MakeMKVClient
         
         el
     
+    #   Create a new disc panel on UI
+    #   @param  str drive       Drive ID, or dir
+    #   @param  str disc_name   Disc ID
+    #   @param  int width       Grid width of panel container
+    #   @return DivElement
+    new_disc_panel: (drive, disc_name='None', width=6) =>
+        
+        container = @_new_el(false, 'col-lg-' + width)
+        panel = @_new_el(container, 'panel panel-default', 'div', {id:drive})
+        heading = @_new_el(panel, 'panel-heading')
+        header_container = @_new_el(heading)
+
+        title = @_new_el(header_container, 'panel-title', 'div', {
+            html:disc_name, id:drive + '_title'
+        })
+        title.css('cursor', 'pointer')
+
+        glyph = @_new_el(title, 'glyphicon glyphicon-minus', 'span')
+
+        body = @_new_el(panel, 'panel-body', 'div', {id:drive + '_body'})
+        footer = @_new_el(panel, 'panel-footer', 'div')
+        
+        footer_div = @_new_el(footer, 'row')
+        
+        #   Get Disc Info Button
+        refresh_btn = @_new_el(
+            @_new_el(footer_div, 'col-md-1'),
+            'btn btn-default disc-info-btn get-info', 'button',
+            {'data-drive-id':drive, 'type':'button', html:'Refresh Disc',}
+        )
+
+        #   Rip Tracks Button
+        rip_btn = @_new_el(
+            @_new_el(footer_div, 'col-md-1 col-md-offset-9'),
+            'btn btn-default disc-info-btn hidden rip-tracks', 'button',
+            {'data-drive-id':drive, 'type':'button', html:'Rip Track(s)',}
+        )
+        
+        container
+    
     #   Callback for scan_drives cmd
     #       Displays all drive data
     #   @param  dict    socket_in  Data dict passed from server
     scan_drives: (socket_in) =>
         
         data = socket_in['data']
+        main_div = document.getElementById('main')
+        main_div.innerHTML = ''
         
-        #   Create a new disc panel on UI
-        #   @param  str drive       Drive ID
-        #   @param  str disc_name   Disc ID
-        #   @param  int width       Grid width of panel container
-        #   @return DivElement
-        _new_disc_panel = (drive, disc_name, width) =>
-            
-            container = @_new_el(false, 'col-lg-' + width)
-            panel = @_new_el(container, 'panel panel-default', 'div', {id:drive})
-            heading = @_new_el(panel, 'panel-heading')
-            header_container = @_new_el(heading)
-            
-            if not disc_name
-                disc_name = 'None'
-            
-            title = @_new_el(header_container, 'panel-title', 'div', {
-                html:disc_name, id:drive + '_title'
-            })
-            title.css('cursor', 'pointer')
-
-            glyph = @_new_el(title, 'glyphicon glyphicon-minus', 'span')
-
-            body = @_new_el(panel, 'panel-body', 'div', {id:drive + '_body'})
-            footer = @_new_el(panel, 'panel-footer', 'div')
-            
-            footer_div = @_new_el(footer, 'row')
-            
-            #   Get Disc Info Button
-            refresh_btn = @_new_el(
-                @_new_el(footer_div, 'col-md-1'),
-                'btn btn-default disc-info-btn get-info', 'button',
-                {'data-drive-id':drive, 'type':'button', html:'Get Info',}
-            )
-
-            #   Rip Tracks Button
-            rip_btn = @_new_el(
-                @_new_el(footer_div, 'col-md-1 col-md-offset-9'),
-                'btn btn-default disc-info-btn hidden rip-tracks', 'button',
-                {'data-drive-id':drive, 'type':'button', html:'Rip Tracks',}
-            )
-            
-            container
-        
-        main_div = $('#main')
-        main_div.html('')
-        
-        cnt = 0
         for drive, disc of data
-            console.log(drive)
-            #disc = data[drive]
-            
-            if cnt%2 == 0
-                row = @_new_el(main_div, 'row')
-            
-            row.append(_new_disc_panel(drive, disc, 6))
-            cnt += 1
-            
-            #if disc #< Get extended disc info only if there's a disc
-            #    @_socket_cmd('disc_info', drive)
+            @_panel_shift(@new_disc_panel(drive, drive + ': ' + disc))
         
         @_panel_disable(false, false)
+    
+    ##  Add or remove a disc panel
+    #   @param  obj     panel   Disc panel
+    #   @param  bool    add     Add panel, false to remove
+    _panel_shift: (panel, add=true) ->
+        
+        if add
+            
+            for row in $('#main>.row')
+                if row.children.length == 1
+                    $(row).append(panel)
+                    added = true
+            
+            if not added
+                
+                console.log(panel)
+                @_new_el(document.getElementById('main'), 'row').append(panel)
+                
+        else
+            
+            panel.parent.removeChild(panel)
+            #   @todo - actually shift the panels
             
     #   Callback for disc_info cmd
     #       Displays disc info in disc pane
     #   @param  dict    socket_in  Data dict passed from server
     disc_info: (socket_in) =>
         
-        data = socket_in['data']
+        data = socket_in.data
         
         #   Get Disc panel body and clear it
-        disc_panel = $(document.getElementById(data['disc_id'] + '_body'))
-        disc_panel.html('')
-        @_panel_disable(disc_panel, false)
+        disc_panel = document.getElementById(data.disc_id + '_body')
+        if disc_panel
+            
+            disc_panel = $(disc_panel)
+            disc_panel.html('')
+            @_panel_disable(disc_panel, false)
+            title = data.disc_id + ': ' + data.disc.Name
+            document.getElementById(data.disc_id + '_title').childNodes[0].nodeValue = title
         
-        #   New title
-        document.getElementById(data['disc_id'] + '_title').childNodes[0].nodeValue = data['disc']['Name']
+        else
+            
+            is_dir = true
+            title = data.dir + ': ' + data.disc.Name
+            data.disc_id = data.dir
+            @_panel_shift(@new_disc_panel(data.dir, title))
+            disc_panel = $(document.getElementById(data.dir + '_body'))
+            disc_panel.html('')
         
         #   Form and form container
         form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
@@ -326,10 +373,15 @@ class MakeMKVClient
                     
         table.tablesorter()
                     
-        #   Un-hide Rip Button
         panel = $(document.getElementById(data['disc_id']))
-        @_panel_disable(panel, false)
-        $(panel.find('.rip-tracks')[0]).removeClass('hidden')
+
+        if is_dir
+            panel.find('.get-info').addClass('hidden')
+        else
+            @_panel_disable(panel, false)
+        
+        #   Un-hide Rip Button
+        panel.find('.rip-tracks').removeClass('hidden')
         
     #   Receive track rip status, output to GUI
     #   @param  dict    socket_in    Data dict passed from server
@@ -346,6 +398,16 @@ class MakeMKVClient
             result =  if result then 'bg-success' else 'bg-danger'
             chk_box = panel.find('input[data-track-id="' + track_id + '"]')
             $(chk_box).parent().parent().removeClass().addClass(result)
+            
+    #   List directory in a modal
+    #   @param  list    dir Directory listing
+    list_dir: (dir='/') ->
+        
+        document.getElementById('modal_title').innerHTML = 'Listing ' + dir
+        $(document.getElementById('modal_error')).addClass('hidden')
+        $(document.getElementById('modal_select')).removeClass('hidden')
+        $(document.getElementById('dir_tree')).removeClass('hidden')
+        $(document.getElementById('modal')).modal('show')
             
     #   Receive output dir and change on display
     #   @param  dict    socket_in    Data dict passed from server
@@ -378,15 +440,15 @@ class MakeMKVClient
     #   @param  dict    socket_in   Data dict passed from server
     panel_disable_socket: (socket_in) =>
         
-        if data.disc_id == 'all'
+        if socket_in.disc_id == 'all'
             panel = false
         else
-            panel = $(document.getElementById(data.disc_id))
+            panel = $(document.getElementById(socket_in.disc_id))
         
-        if data.busy == undefined
+        if socket_in.busy == undefined
             @_panel_disable(panel)
         else
-            @_panel_disable(panel, data.busy)
+            @_panel_disable(panel, socket_in.busy)
             
     ##  Disable a panel's input els
     #   @param  $(obj)  panel   Panel jQuery obj, false to select all panels

@@ -31,7 +31,7 @@
                 </form>
             </div>
             <div class='col-sm-1 col-md-offset-1'>
-                <button type='button' class='btn btn-default disc-btn' id='rip_selected'>Rip Selected</button>
+                <button type='button' class='btn btn-default' id='browse_fs'>Browse Filesystem</button>
             </div>
             <div class='col-sm-1 col-md-offset-2 col-sm-offset-9'>
                 <button type='button' class='btn btn-default disc-btn' id='refresh_all'>Refresh Drive(s)</button>
@@ -41,29 +41,36 @@
         <div id='main'> </div>
     </div>
     
-    <!-- Error Modal -->
-    <div class='modal fade' id='err_modal' tabindex='-1' role='dialog' aria-hidden='true'>
+    <!-- Modal -->
+    <div class='modal fade' id='modal' tabindex='-1' role='dialog' aria-hidden='true'>
         <div class='modal-dialog'>
             <div class='modal-content'>
                 <div class='modal-header'>
                     <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                    <h4 class='modal-title' id='err_title'></h4>
+                    <h4 class='modal-title' id='modal_title'></h4>
                 </div>
-                <div class='modal-body' id='err_body'></div>
-                <div class='modal-footer' id='err_foot'>
+                <div class='modal-body' id='modal_body'>
+                  <div id='modal_error'></div>
+                  <div id="dir_tree" class='hidden'></div>
+                </div>
+                <div class='modal-footer' id='modal_foot'>
                     <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
+                    <button type="button" class="btn btn-primary" id='modal_select'>Select</button>
                 </div>  
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css'></script>
+    <!-- Scripts/CSS -->
+    <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/css/bootstrap.min.css' />
+    <link rel='stylesheet' href='//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.0/themes/default/style.min.css' />
+    
     <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.1.1/js/bootstrap.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.15.14/jquery.tablesorter.min.js'></script>
     <script src='//cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.15.14/parsers/parser-metric.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/jstree/3.0.0/jstree.min.js'></script>
     <script src="/client"></script>
 
 </body>

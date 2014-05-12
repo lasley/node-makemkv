@@ -14,14 +14,16 @@ http = require('http')
 io = require('socket.io')
 url = require('url')
 fs = require('fs')
+path = require('path')
 CoffeeScript = require('coffee-script')
 MakeMKV = require('./makemkv.coffee')
 
 class MakeMKVServer extends MakeMKV
 
-    CLIENT_FILE: __dirname + '/client.html'
+    CLIENT_FILE: path.join(__dirname, 'client.html')
+    TREEVIEW_FOLDER: path.join(__dirname, 'bootstrap-treeview', 'dist')
     SUCCESS_STRING: 'success'
-    CLIENT_COFFEE: __dirname + '/client.coffee'
+    CLIENT_COFFEE: path.join(__dirname, 'client.coffee')
 
     constructor: (port) ->
         
@@ -32,34 +34,43 @@ class MakeMKVServer extends MakeMKV
         server = http.createServer((req, res) =>
             
             req.setEncoding 'utf8'
-            path = url.parse(req.url).pathname
+            parsed_url = url.parse(req.url, true)
+            path_ = parsed_url.pathname
             
-            if req.method == 'POST'
+            console.log(req.method + ' to ' + path_)
             
-                req.on('data', (chunk) =>
-                    data = JSON.parse(chunk.toString())
-                    @do_broadcast(socket, {'app':path[1..], 'data':data})
-                    res.end(@SUCCESS_STRING)
-                )
+            switch req.method
             
-            else
+                when 'POST'
+                
+                    req.on('data', (chunk) =>
+                        data = JSON.parse(chunk.toString())
+                        @do_broadcast(socket, {'app':path_[1..], 'data':data})
+                        res.end(@SUCCESS_STRING)
+                    )
+                
+                when 'GET'
             
-                switch path
-                    
-                    when '/' #< Serve static client html
-                        res.writeHead(200, {'Content-Type': 'text/html'})
-                        res.end(fs.readFileSync(@CLIENT_FILE,
-                                                {encoding:'utf-8'}))
+                    switch path_
                         
-                    when '/client' #< Serve the client coffeescript
-                        res.writeHead(200, {'Content-Type': 'application/javascript'})
-                        cs = fs.readFileSync(@CLIENT_COFFEE, {encoding:'utf-8'})
-                        res.end(CoffeeScript.compile(cs)) #< @todo globalize the load, this is good for testing
-                    
-                    when '/favicon.ico' #< Favicon
-                        res.writeHead(200, {'Content-Type': 'image/x-icon'} )
-                        #   @todo..make an icon
-                        res.end('Success')
+                        when '/' #< Serve static client html
+                            res.writeHead(200, {'Content-Type': 'text/html'})
+                            fs.readFile(@CLIENT_FILE, {encoding:'utf-8'}, (err, data)->res.end(data))
+
+                        when '/client' #< Serve the client coffeescript
+                            res.writeHead(200, {'Content-Type': 'application/javascript'})
+                            fs.readFile(@CLIENT_COFFEE, {encoding:'utf-8'}, (err, data) ->
+                                res.end(CoffeeScript.compile(data)) #< @todo globalize the load, this is good for testing
+                            )
+                        
+                        when '/favicon.ico' #< Favicon
+                            res.writeHead(200, {'Content-Type': 'image/x-icon'} )
+                            #   @todo..make an icon
+                            res.end('Success')
+                            
+                        when '/list_dir' #< List dir
+                            res.writeHead(200, {'Content-Type': 'application/javascript'})
+                            @list_dir(parsed_url.query['id'], (dir)=>res.end(JSON.stringify(dir)))
                         
         ).listen(@LISTEN_PORT)
         
@@ -110,6 +121,17 @@ class MakeMKVServer extends MakeMKV
                 @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
                 @rip_track(data['save_dir'], data['drive_id'],
                                    data['track_ids'], single_broadcast)
+            )
+            
+            #   User is browsing a directory, only send to them
+            client.on('list_dir', (data) =>
+                console.log('listing dir ' + data)
+                @list_dir(data, (dir) => client.emit('list_dir', dir))
+            )
+            
+            client.on('scan_dirs', (data) =>
+                console.log('scanning dirs ' + data)
+                @scan_dirs(data, single_broadcast)
             )
             
             ##  Socket debugging
@@ -187,6 +209,59 @@ class MakeMKVServer extends MakeMKV
             callback(@save_to)
         else
             @save_to
+    
+    ##  Scan directories with MakeMKV
+    #   @param  list    dirs    Directories to scan
+    #   @param  func    callback    callback function, receives disc_info every time avail
+    scan_dirs: (dirs, callback) =>
+
+        #   @todo - add logic around this instead of just scanning everything..
+        for dir in dirs
+            @scan_dir(path.join(@USER_SETTINGS.browse_jail, dir), callback)
+        
+    
+    ##  Dir relay
+    #   @param  str     dir         Dir to list
+    #   @param  func    callback    callback function
+    #   @return dict    Dict of items in folder, matching jstree specifications
+    list_dir: (dir, callback) =>
+        
+        browse_jail = @USER_SETTINGS.browse_jail
+        
+        if dir in [undefined, '#']
+            jailed_dir = browse_jail
+            dir = '/'
+        else
+            jailed_dir = path.join(browse_jail, dir)
+        
+        console.log(dir + ' ' + jailed_dir)
+        
+        fs.readdir(jailed_dir, (err, dir_arr) =>
+
+            folder_data = []
+            
+            if dir_arr
+                dir_arr.forEach((file) =>
+                
+                    relative_p = path.join(dir, file)
+                    extension = file.split('.').pop()
+                    stat = fs.statSync(path.join(jailed_dir, file))
+                    
+                    if stat and stat.isDirectory()
+                        folder_data.push({
+                            text: file, children: true, icon: 'folder', id: relative_p
+                        }) 
+                    else if extension in @sanitizer.VID_EXTS
+                        folder_data.push({
+                            text: file, children: false, icon: 'file', id: relative_p
+                        })
+                        
+                )
+                
+            console.log(folder_data)
+            callback(folder_data)
+        )
+        
         
     ##  Error handler
     #   @param  str type    Type of error
