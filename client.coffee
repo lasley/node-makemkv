@@ -298,8 +298,14 @@ class MakeMKVClient
             is_dir = true
             title = data.dir + ': ' + data.disc.Name
             data.disc_id = data.dir
-            @_panel_shift(@new_disc_panel(data.dir, title))
-            disc_panel = $(document.getElementById(data.dir + '_body'))
+            disc_panel = document.getElementById(data.dir + '_body')
+            
+            if not disc_panel
+                @_panel_shift(@new_disc_panel(data.dir, title))
+                disc_panel = document.getElementById(data.dir + '_body')
+            else
+                
+            disc_panel = $(disc_panel)
             disc_panel.html('')
         
         #   Form and form container
