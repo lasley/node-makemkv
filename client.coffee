@@ -303,7 +303,6 @@ class MakeMKVClient
             if not disc_panel
                 @_panel_shift(@new_disc_panel(data.dir, title))
                 disc_panel = document.getElementById(data.dir + '_body')
-            else
                 
             disc_panel = $(disc_panel)
             disc_panel.html('')
