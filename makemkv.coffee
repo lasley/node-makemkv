@@ -114,6 +114,7 @@ class MakeMKV
         return_false = () =>
             for track_id in track_ids
                 ripped_tracks['data']['results'][track_id] = false
+            @toggle_busy(disc_id, false) 
             ripped_tracks
         
         #   Loop tracks to rip one at a time.
@@ -124,9 +125,9 @@ class MakeMKV
             
             if track_id == undefined #< Tracks done
                 
+                @toggle_busy(disc_id, false) 
+                
                 #   Loop tracks, normalize the names
-                
-                
                 if callback
                     callback(ripped_tracks)
                 else
@@ -169,10 +170,15 @@ class MakeMKV
         if @toggle_busy(disc_id, true) 
             save_dir = @_mk_dir(save_dir)
             if not save_dir
-                return return_false()
+                if callback
+                    callback(return_false())
+                else
+                    return return_false()
             __recurse_tracks(track_ids, ripped_tracks, __recurse_tracks)
         else
             false
+            
+    
 
     ##  Scan drives, return info. Also sets @drive_map
     #   @param  func    callback Callback function, will receive drives as param
@@ -327,9 +333,6 @@ class MakeMKV
                         ] = split_line.pop()[1..-2]
                             
         #   Count the track parts (Audio/Video/Subtitle)
-        
-        console.log(info_out)
-        
         for track_id of info_out['data']['tracks']
             
             smap = info_out['data']['tracks'][track_id]['Segments Map'].replace(/,/g, ' ')

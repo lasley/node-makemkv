@@ -86,7 +86,7 @@ class MakeMKVServer extends MakeMKV
             _display_cache = () =>
                 @display_cache((msgs)=>
                     for msg in msgs 
-                        single_broadcast(msg)
+                        client.emit(msg.cmd, msg.data)
                 )
                 
             _display_cache() #< Actually send it
@@ -217,7 +217,7 @@ class MakeMKVServer extends MakeMKV
 
         #   @todo - add logic around this instead of just scanning everything..
         for dir in dirs
-            @scan_dir(path.join(@USER_SETTINGS.browse_jail, dir), callback)
+            @scan_dir(path.join(@USER_SETTINGS.source_dir, dir), callback)
         
     
     ##  Dir relay
@@ -226,13 +226,13 @@ class MakeMKVServer extends MakeMKV
     #   @return dict    Dict of items in folder, matching jstree specifications
     list_dir: (dir, callback) =>
         
-        browse_jail = @USER_SETTINGS.browse_jail
+        source_dir = @USER_SETTINGS.source_dir
         
         if dir in [undefined, '#']
-            jailed_dir = browse_jail
+            jailed_dir = source_dir
             dir = '/'
         else
-            jailed_dir = path.join(browse_jail, dir)
+            jailed_dir = path.join(source_dir, dir)
         
         console.log(dir + ' ' + jailed_dir)
         

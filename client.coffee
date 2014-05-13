@@ -453,7 +453,7 @@ class MakeMKVClient
             panel = $(document.getElementById(socket_in.disc_id))
         
         if socket_in.busy == undefined
-            @_panel_disable(panel)
+            @_panel_disable(panel, false)
         else
             @_panel_disable(panel, socket_in.busy)
             
