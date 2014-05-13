@@ -119,7 +119,7 @@ class MakeMKVServer extends MakeMKV
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
                 console.log('getting disc info for', data)
-                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data, "busy":true}})
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data.drive_id, "busy":true}})
                 @rip_track(data['save_dir'], data['drive_id'], data['track_ids'], single_broadcast)
             )
             
@@ -240,6 +240,9 @@ class MakeMKVServer extends MakeMKV
 
             folder_data = []
             
+            valid_exts = ['img', 'iso']
+            $.extend(valid_exts, @sanitizer.VID_EXTS)
+            
             if dir_arr
                 dir_arr.forEach((file) =>
                 
@@ -251,7 +254,7 @@ class MakeMKVServer extends MakeMKV
                         folder_data.push({
                             text: file, children: true, icon: 'folder', id: file
                         }) 
-                    else if extension in @sanitizer.VID_EXTS
+                    else if extension in valid_exts
                         folder_data.push({
                             text: file, children: false, icon: 'file', id: file
                         })
