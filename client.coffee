@@ -198,11 +198,15 @@ class MakeMKVClient
         header_container = @_new_el(heading)
 
         title = @_new_el(header_container, 'panel-title', 'div', {
-            html:disc_name, id:drive + '_title'
+            id:drive + '_title'
         })
         title.css('cursor', 'pointer')
-
-        glyph = @_new_el(title, 'glyphicon glyphicon-minus', 'span')
+        
+        t_grid = @_new_el(title, 'row')
+        @_new_el(t_grid, 'col-sm-11', 'div', {html:disc_name})
+        g_div = @_new_el(t_grid, 'col-sm-1', 'div')
+        
+        glyph = @_new_el(g_div, 'glyphicon glyphicon-minus', 'span')
 
         body = @_new_el(panel, 'panel-body', 'div', {id:drive + '_body'})
         footer = @_new_el(panel, 'panel-footer', 'div')
