@@ -249,11 +249,11 @@ class MakeMKVServer extends MakeMKV
                     
                     if stat and stat.isDirectory()
                         folder_data.push({
-                            text: file, children: true, icon: 'folder', id: relative_p
+                            text: file, children: true, icon: 'folder', id: file
                         }) 
                     else if extension in @sanitizer.VID_EXTS
                         folder_data.push({
-                            text: file, children: false, icon: 'file', id: relative_p
+                            text: file, children: false, icon: 'file', id: file
                         })
                         
                 )

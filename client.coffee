@@ -133,26 +133,11 @@ class MakeMKVClient
             @_panel_collapse(panel)
         )
         
-        #   Dir tree
-        $(document.getElementById('dir_tree')).jstree({
-            plugins: ['checkbox'],
-            checkbox: {'keep_selected_style': false},
-            core:{
-                data: {
-                    url: '/list_dir',
-                    type: 'GET',
-                    dataType: 'JSON',
-                    contentType: 'application/json',
-                    data: (node) -> {id: node.id}
-                 }
-        }})
-        
         $(document.getElementById('modal_select')).on('click', (event) =>
             $(document.getElementById('modal')).modal('hide')
-            clicked = $('a.jstree-clicked')
-            ids = (el.getAttribute('id') for el in clicked.parent('.jstree-node'))
+            selected = $(document.getElementById('dir_select')).find(":selected")
+            ids = (el.getAttribute('value') for el in selected)
             @socket.emit('scan_dirs', ids)
-            clicked.removeClass('jstree-clicked').addClass('jstree-checkbox')
         )
 
     #   Display error modal
@@ -408,13 +393,27 @@ class MakeMKVClient
             
     #   List directory in a modal
     #   @param  list    dir Directory listing
-    list_dir: (dir='/') ->
+    list_dir: (dir='/') =>
         
-        document.getElementById('modal_title').innerHTML = 'Listing ' + dir
         $(document.getElementById('modal_error')).addClass('hidden')
         $(document.getElementById('modal_select')).removeClass('hidden')
-        $(document.getElementById('dir_tree')).removeClass('hidden')
         $(document.getElementById('modal')).modal('show')
+        
+        dir_tree = $(document.getElementById('dir_tree'))
+        dir_tree.removeClass('hidden').html('Loading...')
+        
+        document.getElementById('modal_title').innerHTML = 'Listing ' + dir
+        
+        $.get('/list_dir', {'dir':'/'}, (data) =>
+            
+            select = @_new_el(false, 'form-control', 'select', {id:'dir_select'})
+            select.attr('multiple', true)
+            
+            for item in data
+                option = @_new_el(select, false, 'option', {value:item.id, html:item.text})
+            
+            $(document.getElementById('dir_tree')).html('').append(select)
+        , 'JSON')
             
     #   Receive output dir and change on display
     #   @param  dict    socket_in    Data dict passed from server
