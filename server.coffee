@@ -80,7 +80,8 @@ class MakeMKVServer extends MakeMKV
         #   Bind socket actions on client connect
         @socket.on('connection', (client) =>
             
-            single_broadcast = (data) => @_do_emit(@socket, data)
+            single_broadcast = (data) =>
+                @_do_emit(@socket, data)
             
             #   Send cache to client
             _display_cache = () =>
@@ -104,23 +105,22 @@ class MakeMKVServer extends MakeMKV
             #   User has sent command to scan drives
             client.on('scan_drives', (data) =>
                 console.log('scanning drives')
-                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':'all',"busy":true}})
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':'all', "busy":true}})
                 @scan_drives(single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
                 console.log('getting disc info for', data)
-                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data, "busy":true}})
                 @disc_info(data, single_broadcast)
             )
             
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
                 console.log('getting disc info for', data)
-                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data,"busy":true}})
-                @rip_track(data['save_dir'], data['drive_id'],
-                                   data['track_ids'], single_broadcast)
+                @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data, "busy":true}})
+                @rip_track(data['save_dir'], data['drive_id'], data['track_ids'], single_broadcast)
             )
             
             #   User is browsing a directory, only send to them

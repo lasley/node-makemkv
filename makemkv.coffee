@@ -207,10 +207,8 @@ class MakeMKV
 
                 if callback
                     callback(drives)
-                    #for drive of drives
-                    #    @disc_info(drive, callback)
                 else
-                    drives #< Return
+                    drives
             )
 
 
@@ -337,23 +335,25 @@ class MakeMKV
             
             smap = info_out['data']['tracks'][track_id]['Segments Map'].replace(/,/g, ' ')
             info_out['data']['tracks'][track_id]['Segments Map'] = smap
+            has_tracks = true
             
             for part_id of info_out['data']['tracks'][track_id]['track_parts']
                 track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                 info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
 
         #   Sanitize Title Names
-        title = info_out['data']['disc']['Name']
-        fallbacks = []
-        fallbacks_ = ['Tree Info', 'Volume Name']
-        
-        for type_ in fallbacks_
-            if info_out['data']['disc'][type_]
-                fallbacks.push(info_out['data']['disc'][type_])
-                
-        info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
-        
-        info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
+        if has_tracks
+            title = info_out['data']['disc']['Name']
+            fallbacks = []
+            fallbacks_ = ['Tree Info', 'Volume Name']
+            
+            for type_ in fallbacks_
+                if info_out['data']['disc'][type_]
+                    fallbacks.push(info_out['data']['disc'][type_])
+                    
+            info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
+            
+            info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
 
         if callback
             callback(info_out)

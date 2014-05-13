@@ -197,9 +197,7 @@ class MakeMKVClient
         heading = @_new_el(panel, 'panel-heading')
         header_container = @_new_el(heading)
 
-        title = @_new_el(header_container, 'panel-title', 'div', {
-            id:drive + '_title'
-        })
+        title = @_new_el(header_container, 'panel-title', 'div', {id:drive + '_title'})
         title.css('cursor', 'pointer')
         
         t_grid = @_new_el(title, 'row')
@@ -236,12 +234,15 @@ class MakeMKVClient
         
         data = socket_in['data']
         main_div = document.getElementById('main')
-        main_div.innerHTML = ''
-        
+
         for drive, disc of data
-            panel = @new_disc_panel(drive, drive + ': ' + disc)
-            panel.addClass('disc_')
-            @_panel_shift(panel)
+            
+            if panel = document.getElementById(drive)
+                panel = panel.parentNode
+            else
+                panel = @new_disc_panel(drive, drive + ': ' + disc)
+                panel.addClass('disc_')    
+                @_panel_shift(panel)
         
         @_panel_disable(false, false)
     
