@@ -52,32 +52,40 @@ class SanitizeTitles
         
     ##  Fully sanitize an input string
     #   @param  Str     string  Input
-    #   @param  list    fallbacks   fallback titles to use for S/D/T gathering
+    #   @param  list    fallbacks   fallback titles to use for S/D/T gathering, in order of pref
     #   @return list    [sanitized,volume_info]
     do_sanitize: (title, fallbacks=[]) =>
         
-        if title
-            console.log(title)
-            
-            for change_to, change_from of @RESERVED_CHAR_MAP
-                title = title.replace(change_from, change_to)
-            
-            console.log(title)
-            
-            #   Extract title info
-            volume_info = @volume_info(title)
-            
             #   Gather fallback Season/Episode Info
+        fallback_info = (volume_info) =>
             for fallback in fallbacks
                 if fallback
                     vi = @volume_info(fallback)
                     for key, val of vi
                         if not volume_info[key]
                             volume_info[key] = val
+        
+        if title
+
+            for change_to, change_from of @RESERVED_CHAR_MAP
+                title = title.replace(change_from, change_to)
             
-            #   regex-->_strip_spaces->title_case->format_season->return
-            volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
-            @format_season(volume_info).trim()
+            console.log(title)
+            
+            #   Extract title info
+            volume_info = fallback_info(@volume_info(title))
+
+        else
+            
+            for change_to, change_from of @RESERVED_CHAR_MAP
+                title = title.replace(change_from, change_to)
+            
+            #   Extract title info
+            volume_info = fallback_info(@volume_info(title))
+            
+        #   regex-->_strip_spaces->title_case->format_season->return
+        volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
+        @format_season(volume_info).trim()
         
     ##  Loop regexes from XML, replace
     #   @param  Str title  Input
