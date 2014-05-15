@@ -77,11 +77,16 @@ class SanitizeTitles
 
         else
             
-            for change_to, change_from of @RESERVED_CHAR_MAP
-                title = title.replace(change_from, change_to)
-            
-            #   Extract title info
-            volume_info = fallback_info(@volume_info(title))
+            for fallback in fallbacks
+                if fallback
+                    
+                    for change_to, change_from of @RESERVED_CHAR_MAP
+                        title = title.replace(change_from, change_to)
+                    
+                    #   Extract title info
+                    volume_info = fallback_info(@volume_info(title))
+                    
+                    break
             
         #   regex-->_strip_spaces->title_case->format_season->return
         volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
