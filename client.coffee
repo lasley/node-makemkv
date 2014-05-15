@@ -411,8 +411,8 @@ class MakeMKVClient
         
         $.get('/list_dir', {'dir':'/'}, (data) =>
             
-            select = @_new_el(false, 'form-control', 'select', {id:'dir_select'})
-            select.attr('multiple', true)
+            select = @_new_el(false, 'form-control', 'select', {id:'dir_select', })
+            select.attr('multiple', true).height(500)
             
             for item in data
                 option = @_new_el(select, false, 'option', {value:item.id, html:item.text})
