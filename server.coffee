@@ -241,7 +241,7 @@ class MakeMKVServer extends MakeMKV
             folder_data = []
             
             valid_exts = ['img', 'iso']
-            $.extend(valid_exts, @sanitizer.VID_EXTS)
+            valid_exts.push.apply(@sanitizer.VID_EXTS)
             
             if dir_arr
                 dir_arr.forEach((file) =>

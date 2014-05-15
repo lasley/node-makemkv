@@ -171,8 +171,11 @@ class SanitizeTitles
                 else if word not in @NO_UPPERCASE #<   Cap first letter of good words
                     out.push(word[0].toUpperCase() + word[1..])
                 else #< No cap
-                    if not out.length and word == 'the' #< Kill `the` if it is first word
-                        the_ = true
+                    if not out
+                        if word == 'the' #< Don't add `the` if it is first word
+                            the_ = true
+                        else #< Else Cap it
+                            out.push(word[0].toUpperCase() + word[1..])
                     else
                         out.push(word)
         

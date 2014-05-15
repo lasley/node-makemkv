@@ -342,18 +342,17 @@ class MakeMKV
                 info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
 
         #   Sanitize Title Names
-        if has_tracks
-            title = info_out['data']['disc']['Name']
-            fallbacks = []
-            fallbacks_ = ['Tree Info', 'Volume Name']
-            
-            for type_ in fallbacks_
-                if info_out['data']['disc'][type_]
-                    fallbacks.push(info_out['data']['disc'][type_])
-                    
-            info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
-            
-            info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
+        title = info_out['data']['disc']['Name']
+        fallbacks = []
+        fallbacks_ = ['Tree Info', 'Volume Name']
+        
+        for type_ in fallbacks_
+            if info_out['data']['disc'][type_]
+                fallbacks.push(info_out['data']['disc'][type_])
+                
+        info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
+        
+        info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
 
         if callback
             callback(info_out)
