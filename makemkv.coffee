@@ -11,6 +11,7 @@
 ###
 
 fs = require('fs')
+path = require('path')
 {EventEmitter} = require('events')
 spawn = require('child_process').spawn
 ini = require('ini')
@@ -258,14 +259,10 @@ class MakeMKV
         errors = []
         
         @_spawn_generic(['--noscan', '-r', 'info', 'file:'+dir, ], (code, disc_info)=>
-            
-            split_file = dir.split('/')[-1].split('.')
-            split_file.pop()
-            fallbacks = [split_file.join('.')]
-            
+
             if code == 0
                 
-                @parse_disc_info(disc_info, info_out, callback, fallbacks)
+                @parse_disc_info(disc_info, info_out, callback)
                 
             else
                 errors = errors.join('')
@@ -348,11 +345,13 @@ class MakeMKV
 
         #   Sanitize Title Names
         title = info_out['data']['disc']['Name']
-        fallbacks = []
 
         for type_ in ['Tree Info', 'Volume Name']
             if info_out['data']['disc'][type_]
                 fallbacks.push(info_out['data']['disc'][type_])
+                
+        absolute_fb = (info_out.data.disc_id or info_out.data.dir).split(path.sep)
+        fallbacks.push(absolute_fb[absolute_fb.length - 1])
                 
         info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
         
