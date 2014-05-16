@@ -259,9 +259,13 @@ class MakeMKV
         
         @_spawn_generic(['--noscan', '-r', 'info', 'file:'+dir, ], (code, disc_info)=>
             
+            split_file = dir.split('/')[-1].split('.')
+            split_file.pop()
+            fallbacks = [split_file.join('.')]
+            
             if code == 0
                 
-                @parse_disc_info(disc_info, info_out, callback)
+                @parse_disc_info(disc_info, info_out, callback, fallbacks)
                 
             else
                 errors = errors.join('')
@@ -274,8 +278,9 @@ class MakeMKV
     #   @param  list    disc_info   Console output from `makemkvcon info`, split by line
     #   @param  dict    info_out    info_out var initialized in scan_dir or scan_disc
     #   @param  func    callback    Callback function, will receive info_out as param
+    #   @param  list    fallbacks   Fallback names for sanitization
     #   @return dict    info_out    Disc/track information
-    parse_disc_info: (disc_info, info_out, callback=false) =>
+    parse_disc_info: (disc_info, info_out, callback=false, fallbacks=[]) =>
         
         for line in disc_info
                         
@@ -344,9 +349,8 @@ class MakeMKV
         #   Sanitize Title Names
         title = info_out['data']['disc']['Name']
         fallbacks = []
-        fallbacks_ = ['Tree Info', 'Volume Name']
-        
-        for type_ in fallbacks_
+
+        for type_ in ['Tree Info', 'Volume Name']
             if info_out['data']['disc'][type_]
                 fallbacks.push(info_out['data']['disc'][type_])
                 

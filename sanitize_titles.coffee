@@ -87,10 +87,13 @@ class SanitizeTitles
                     volume_info = fallback_info(@volume_info(title))
                     
                     break
+                
+        if volume_info.sanitized
+            #   regex-->_strip_spaces->title_case->format_season->return
+            volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info.sanitized)))
+            @format_season(volume_info).trim()
             
-        #   regex-->_strip_spaces->title_case->format_season->return
-        volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
-        @format_season(volume_info).trim()
+        false
         
     ##  Loop regexes from XML, replace
     #   @param  Str title  Input
