@@ -166,6 +166,9 @@ class MakeMKV
                             'Output was:{@NEWLINE_CHAR}' +
                             '"#{errors}"#{@NEWLINE_CHAR}'
                         )
+                        
+                        console.log(data)
+                        
                         ripped_tracks['data']['results'][track_id] = false
                         
                     #   Next up
