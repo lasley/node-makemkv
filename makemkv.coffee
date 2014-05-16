@@ -258,8 +258,9 @@ class MakeMKV
         return_ = []
         errors = []
         
-        extension = dir.split('.')[-1]
-        cmd = if extension in ['img', 'iso'] then 'iso:' else 'file:' 
+        extension = dir.split('.')
+        
+        cmd = if extension[extension.length - 1] in ['img', 'iso'] then 'iso:' else 'file:' 
         
         @_spawn_generic(['--noscan', '-r', 'info', cmd+dir, ], (code, disc_info)=>
 
