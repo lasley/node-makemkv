@@ -142,8 +142,6 @@ class MakeMKV
                     extension = disc_id.split('.')
                     cmd = if extension[extension.length - 1] in ['img', 'iso'] then 'iso:' else 'file:'
                     
-                cmd = if disc_id.indexOf('/dev/') == 0 then 'dev:' else 'file:'
-                
                 console.log('RIP COMMAND: \r\n' + ['-r', '--noscan', 'mkv', '--cache=256',
                                 cmd+disc_id, track_id, save_dir, ])
                 
