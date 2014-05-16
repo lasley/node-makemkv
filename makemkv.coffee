@@ -279,6 +279,9 @@ class MakeMKV
     #   @return dict    info_out    Disc/track information
     parse_disc_info: (disc_info, info_out, callback=false, fallbacks=[]) =>
         
+        console.log('MAKEMKV RAW OUT:')
+        console.log(disc_info)
+        
         for line in disc_info
                         
             #   Loop the line split by COL_PATTERN, take every 2 starting at index 1
@@ -331,6 +334,11 @@ class MakeMKV
                         track_info[ \
                             if attr_id of @ATTRIBUTE_IDS then @ATTRIBUTE_IDS[attr_id] else attr_id 
                         ] = split_line.pop()[1..-2]
+                   
+                            
+        console.log('Parsed MakeMKV Output:')
+        console.log(info_out)
+        
                             
         #   Count the track parts (Audio/Video/Subtitle)
         for track_id of info_out['data']['tracks']
@@ -342,7 +350,8 @@ class MakeMKV
             for part_id of info_out['data']['tracks'][track_id]['track_parts']
                 track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                 info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
-
+        
+        
         #   Sanitize Title Names
         title = info_out['data']['disc']['Name']
 
