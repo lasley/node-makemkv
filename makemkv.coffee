@@ -136,6 +136,12 @@ class MakeMKV
             
             else
                 
+                if disc_id.indexOf('/dev/') == 0
+                    cmd = 'dev:'
+                else
+                    extension = disc_id.split('.')
+                    cmd = if extension[extension.length - 1] in ['img', 'iso'] then 'iso:' else 'file:'
+                    
                 cmd = if disc_id.indexOf('/dev/') == 0 then 'dev:' else 'file:'
 
                 @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
@@ -343,6 +349,7 @@ class MakeMKV
         console.log('Parsed MakeMKV Output:')
         console.log(info_out)
         
+        #if 
                             
         #   Count the track parts (Audio/Video/Subtitle)
         for track_id of info_out['data']['tracks']
