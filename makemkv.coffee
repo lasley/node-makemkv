@@ -160,14 +160,11 @@ class MakeMKV
                         
                     else
                 
-                        errors = data
                         console.log(
-                            'rip_track failed on #{disc_id}:#{track_id}.' +
-                            'Output was:{@NEWLINE_CHAR}' +
-                            '"#{errors}"#{@NEWLINE_CHAR}'
+                            'rip_track failed \r\n' +
+                            'Output was:' + data + '\r\n' +
+                            'code: ' + code
                         )
-                        
-                        console.log(data)
                         
                         ripped_tracks['data']['results'][track_id] = false
                         
