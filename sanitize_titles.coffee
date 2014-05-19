@@ -17,7 +17,7 @@ class SanitizeTitles
     #   Order of hierarchy
     DIR_HIERARCHY: ['season', 'disc', 'episode']
     @RESERVED_CHAR_MAP: { #   Filesystem reserved char replacement map
-        '/':'-', '\\':'-', ':':'-', '|':'-',
+        '/':' -', '\\':' -', ':':' -', '|':' -',
         '?':' ', '%':' ', '*':' ', '"':' ', '<':' ', '>':' '
     }
     
@@ -57,27 +57,31 @@ class SanitizeTitles
     do_sanitize: (title, fallbacks=[]) =>
         
         if title
-            console.log(title)
+            fallbacks.unshift(title)
             
-            for change_to, change_from of @RESERVED_CHAR_MAP
-                title = title.replace(change_from, change_to)
-            
-            console.log(title)
-            
-            #   Extract title info
-            volume_info = @volume_info(title)
-            
-            #   Gather fallback Season/Episode Info
-            for fallback in fallbacks
-                if fallback
-                    vi = @volume_info(fallback)
+        for title in fallbacks
+            if title
+                
+                for change_to, change_from of @RESERVED_CHAR_MAP
+                    title = title.replace(change_from, change_to)
+
+                vi = @volume_info(title)
+                console.log(vi)
+                
+                #   Assign to volume_info, or fill missing keys
+                if not volume_info
+                    volume_info = vi
+                else
                     for key, val of vi
                         if not volume_info[key]
                             volume_info[key] = val
-            
+                
+        if volume_info.sanitized
             #   regex-->_strip_spaces->title_case->format_season->return
-            volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info['sanitized'])))
+            volume_info['sanitized'] = @_do_title_case(@_strip_spaces(@do_regexes(volume_info.sanitized)))
             @format_season(volume_info).trim()
+        else   
+            false
         
     ##  Loop regexes from XML, replace
     #   @param  Str title  Input
@@ -170,8 +174,8 @@ class SanitizeTitles
                     out.push(word.toUpperCase())
                 else if word not in @NO_UPPERCASE #<   Cap first letter of good words
                     out.push(word[0].toUpperCase() + word[1..])
-                else #< No cap
-                    if not out
+                else #< No capital
+                    if not out.length
                         if word == 'the' #< Don't add `the` if it is first word
                             the_ = true
                         else #< Else Cap it
