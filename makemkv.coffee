@@ -11,9 +11,9 @@
 ###
 
 fs = require('fs')
+path = require('path')
 {EventEmitter} = require('events')
 spawn = require('child_process').spawn
-ini = require('ini')
 SanitizeTitles = require(__dirname + '/sanitize_titles.coffee')
 
 class MakeMKV
@@ -26,13 +26,14 @@ class MakeMKV
         @COL_PATTERN = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
         @busy_devices = {}
         
-        SETTINGS_PATH = __dirname + '/server_settings.ini'
-        SETTINGS_DATA = ini.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
+        SETTINGS_PATH = path.join(__dirname, '/settings.json')
+        SETTINGS_DATA = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
         
-        @SELECTION_PROFILE = SETTINGS_DATA.selection_profile
-        @ATTRIBUTE_IDS = SETTINGS_DATA.attibute_ids
+        @ATTRIBUTE_IDS = SETTINGS_DATA.attribute_ids
 
-        @USER_SETTINGS = SETTINGS_DATA.settings
+        @USER_SETTINGS = SETTINGS_DATA.USER_SETTINGS
+        
+        @CONVERSION_PROFILE = path.join(__dirname, @USER_SETTINGS.conversion_profile)
         @MAKEMKVCON_PATH = @USER_SETTINGS.makemkvcon_path
         @LISTEN_PORT = @USER_SETTINGS.listen_port
         @OUTLIER_MODIFIER = @USER_SETTINGS.outlier_modifier
@@ -54,26 +55,13 @@ class MakeMKV
         for track_id, track_data of disc_info.tracks
             track_sizes.push([track_id, track_data['Disk Size Bytes']]) #< for sorting
         
-        track_sizes.sort((a, b) -> a[1] - b[1])
-        
         #   Calc upper quartile
-        high_mid = (track_sizes.length - 1) * 0.75
-        if track_sizes[high_mid] #< Len was odd number
-            uq = track_sizes[high_mid][1]
-        else #< Len was even
-            ceil = Math.ceil(high_mid)
-            floor = Math.floor(high_mid)
-            uq = (track_sizes[ceil][1] + track_sizes[floor][1]) / 2
+        track_sizes.sort((a, b) -> a[1] - b[1])
+        uq = Math.round(track_sizes.length * 0.75 * (@OUTLIER_MODIFIER / 100))
         
-        #   If OUTLIER_MODIFIER lower than the uq, probably not a good file...
-        console.log(uq)
-        low_num = uq * @OUTLIER_MODIFIER
-        console.log(low_num)
-        for track in track_sizes
-            console.log(track)
-            _bol = if track[1] >= low_num then true else false
-            disc_info['tracks'][track[0]]['_autochk'] = _bol
-                
+        for track, key in track_sizes
+            disc_info['tracks'][track[0]]['_autochk'] = key >= uq
+ 
         if callback
             callback(disc_info)
         else
@@ -108,7 +96,7 @@ class MakeMKV
     rip_track: (save_dir, disc_id, track_ids, callback=false) =>
         
         ripped_tracks = {'data':{'disc_id':disc_id, 'results':{}}, 'cmd':'rip_track'}
-        save_dir = @save_to + '/' + save_dir
+        save_dir = path.join(@save_to, save_dir)
         
         #   Critical failure, report for all tracks
         return_false = () =>
@@ -125,19 +113,33 @@ class MakeMKV
             
             if track_id == undefined #< Tracks done
                 
-                @toggle_busy(disc_id, false) 
+                track_regex = /t(itle|rack)?(\d{1,2}).mkv/gi
+                @toggle_busy(disc_id, false)
                 
                 #   Loop tracks, normalize the names
-                if callback
-                    callback(ripped_tracks)
-                else
-                    ripped_tracks #< Return
-            
+                fs.readdir(save_dir, (err, files) =>
+                    split_dir = save_dir.split(path.sep)
+                    basename = split_dir[-1]
+                    for file in files
+                        if file.indexOf('.mkv', file.length-4) != -1
+                            if track_num = track_regex.exec(file)[2]
+                                new_name = basename + '_t' + track_num
+                                new_path = path.join(save_dir, new_name)
+                                console.log('Renaming "' + file + '" to "' + new_name + '"')
+                                fs.rename(path.join(save_dir, file), new_path)
+                    
+                    if callback
+                        callback(ripped_tracks)
+                    else
+                        ripped_tracks #< Return
+                            
+                )
+                
             else
                 
                 cmd = if disc_id.indexOf('/dev/') == 0 then 'dev:' else 'file:'
 
-                @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256',
+                @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256', '--profile=' + @CONVERSION_PROFILE
                                 cmd+disc_id, track_id, save_dir, ], (code, data) =>
                     
                     if code == 0
@@ -149,16 +151,16 @@ class MakeMKV
                                 break
                             
                         if not ripped_tracks['data']['results'][track_id]
+                            
+                            error = 'disc_info failed on ' + disc_id + ':' + track_id + '. Output was:\r\n' + data
+                            console.log(error)
                             ripped_tracks['data']['results'][track_id] = false
                         
                     else
                 
-                        errors = data
-                        console.log(
-                            'rip_track failed on #{disc_id}:#{track_id}.' +
-                            'Output was:{@NEWLINE_CHAR}' +
-                            '"#{errors}"#{@NEWLINE_CHAR}'
-                        )
+
+                        error = 'disc_info failed on ' + disc_id + ':' + track_id + '. Output was:\r\n' + data
+                        console.log(error)
                         ripped_tracks['data']['results'][track_id] = false
                         
                     #   Next up
@@ -168,13 +170,16 @@ class MakeMKV
             
         #   If disc not busy, set busy and go
         if @toggle_busy(disc_id, true) 
+            
             save_dir = @_mk_dir(save_dir)
             if not save_dir
                 if callback
                     callback(return_false())
                 else
                     return return_false()
+
             __recurse_tracks(track_ids, ripped_tracks, __recurse_tracks)
+        
         else
             false
             
@@ -230,16 +235,19 @@ class MakeMKV
                 
                 if code == 0
                     
-                    @parse_disc_info(disc_info, info_out, callback)
-                    
-                    #   Release disc, sanitize disc name, push into cache
+                    if disc_info.indexOf('Failed to open disc') != -1
+                        error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                        console.log(error)
+                        callback({'cmd':'@_error', 'data':error})
+                    else
+                        @parse_disc_info(disc_info, info_out, callback)
+
                     @toggle_busy(disc_id)
                     
                 else
-                    errors = errors.join('')
-                    console.log('disc_info failed on #{disc_id}. Output was:{@NEWLINE_CHAR}'+
-                                '"#{errors}"{@NEWLINE_CHAR}')
-                    false
+                    error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                    console.log(error)
+                    callback({'cmd':'@_error', 'data':error})
             )
             
         else
@@ -261,13 +269,18 @@ class MakeMKV
             
             if code == 0
                 
-                @parse_disc_info(disc_info, info_out, callback)
+                if disc_info.indexOf('Failed to open disc') != -1
+                    error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                    console.log(error)
+                    callback({'cmd':'@_error', 'data':error})
+                else
+                    @parse_disc_info(disc_info, info_out, callback)
                 
             else
-                errors = errors.join('')
-                console.log('disc_info failed on #{disc_id}. Output was:{@NEWLINE_CHAR}'+
-                            '"#{errors}"{@NEWLINE_CHAR}')
-                false
+                
+                error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                console.log(error)
+                callback({'cmd':'@_error', 'data':error})
         )
             
     ##  Parse disc info as returned from MakeMKV
@@ -419,10 +432,10 @@ class MakeMKV
         
         fp = out_path.split('/')
         
-        for key of @RESERVED_CHAR_MAP
-            fp[fp.length - 1] = fp[fp.length - 1].replace(key, @RESERVED_CHAR_MAP[key])
+        for key, val of @RESERVED_CHAR_MAP
+            fp[fp.length - 1] = fp[fp.length - 1].replace(key, val)
         
-        console.log(fp.join('/'))
+        console.log('Sanitized fp: ' + fp.join('/'))
         
         fp.join('/') 
         
