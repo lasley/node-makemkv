@@ -123,7 +123,7 @@ class MakeMKV
                     for file in files
                         if file.indexOf('.mkv', file.length-4) != -1
                             if track_num = track_regex.exec(file)[2]
-                                new_name = basename + '_t' + track_num + '.mkv'
+                                new_name = basename + ' t' + track_num + '.mkv'
                                 new_path = path.join(save_dir, new_name)
                                 console.log('Renaming "' + file + '" to "' + new_name + '"')
                                 fs.rename(path.join(save_dir, file), new_path)
