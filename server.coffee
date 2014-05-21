@@ -24,6 +24,8 @@ class MakeMKVServer extends MakeMKV
     TREEVIEW_FOLDER: path.join(__dirname, 'bootstrap-treeview', 'dist')
     SUCCESS_STRING: 'success'
     CLIENT_COFFEE: path.join(__dirname, 'client.coffee')
+    CMD_ORDER: ['change_out_dir', 'scan_drives', 'disc_info', 'rip_track']
+
 
     constructor: (port) ->
         
@@ -148,9 +150,8 @@ class MakeMKVServer extends MakeMKV
     #       scan_drives, disc_info, rip_track
     display_cache: (callback=false) =>
         
-        cmd_order = ['change_out_dir', 'scan_drives', 'disc_info', 'rip_track']
         cached = []
-        for cmd in cmd_order
+        for cmd in @CMD_ORDER
             if typeof(@cache[cmd]) == 'object'
                 for namespace of @cache[cmd]
                     cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
@@ -190,6 +191,11 @@ class MakeMKVServer extends MakeMKV
             @cache[cmd] = {}
 
         @cache[cmd][namespace] = {'cache_refreshed': new Date(), 'data': data }
+        
+        cmd_index = @CMD_ORDER.indexOf(cmd) + 1
+        for i in @CMD_ORDER[cmd_index...]
+            if @cache[i]
+                @cache[i][namespace] = undefined
         
         @cache[cmd][namespace]
     
