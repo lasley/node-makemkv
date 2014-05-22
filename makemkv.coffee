@@ -137,7 +137,11 @@ class MakeMKV
                 
             else
                 
-                cmd = if disc_id.indexOf('/dev/') == 0 then 'dev:' else 'file:'
+                if disc_id.indexOf('/dev/') == 0
+                    cmd = 'dev:'
+                else
+                    extension = disc_id.split('.')
+                    cmd = if extension[extension.length - 1] in ['img', 'iso'] then 'iso:' else 'file:'
 
                 @_spawn_generic(['-r', '--noscan', 'mkv', '--cache=256', '--profile=' + @CONVERSION_PROFILE
                                 cmd+disc_id, track_id, save_dir, ], (code, data) =>
@@ -264,8 +268,12 @@ class MakeMKV
         }
         return_ = []
         errors = []
+            
+        extension = dir.split('.')
         
-        @_spawn_generic(['--noscan', '-r', 'info', 'file:'+dir, ], (code, disc_info)=>
+        cmd = if extension[extension.length - 1] in ['img', 'iso'] then 'iso:' else 'file:' 
+        
+        @_spawn_generic(['--noscan', '-r', 'info', cmd+dir, ], (code, disc_info)=>
             
             if code == 0
                 
