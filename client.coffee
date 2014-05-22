@@ -274,12 +274,12 @@ class MakeMKVClient
     disc_info: (socket_in) =>
         
         data = socket_in.data
-        document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
         
         #   Get Disc panel body and clear it
         disc_panel = document.getElementById(data.disc_id + '_body')
         if disc_panel
             
+            document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
             disc_panel = $(disc_panel)
             disc_panel.html('')
             @_panel_disable(disc_panel, false)
@@ -299,6 +299,7 @@ class MakeMKVClient
                 
             disc_panel = $(disc_panel)
             disc_panel.html('')
+            document.getElementById(data.dir).className = 'panel panel-primary disc_'
         
         #   Form and form container
         form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
@@ -430,7 +431,7 @@ class MakeMKVClient
         $.get('/list_dir', {'dir':'/'}, (data) =>
             
             select = @_new_el(false, 'form-control', 'select', {id:'dir_select'})
-            select.attr('multiple', true)
+            select.attr('multiple', true).height('500')
             
             for item in data
                 option = @_new_el(select, false, 'option', {value:item.id, html:item.text})
