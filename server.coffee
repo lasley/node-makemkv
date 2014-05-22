@@ -20,12 +20,12 @@ MakeMKV = require('./makemkv.coffee')
 
 class MakeMKVServer extends MakeMKV
 
-    CLIENT_FILE: path.join(__dirname, 'client.html')
-    TREEVIEW_FOLDER: path.join(__dirname, 'bootstrap-treeview', 'dist')
-    SUCCESS_STRING: 'success'
+    CLIENT_HTML: path.join(__dirname, 'static', 'client.html')
+    CLIENT_CSS: path.join(__dirname, 'static', 'client.css')
+    CLIENT_ICON: path.join(__dirname, 'static', 'favicon.png')
     CLIENT_COFFEE: path.join(__dirname, 'client.coffee')
+    SUCCESS_STRING: 'success'
     CMD_ORDER: ['change_out_dir', 'scan_drives', 'disc_info', 'rip_track']
-
 
     constructor: (port) ->
         
@@ -55,20 +55,25 @@ class MakeMKVServer extends MakeMKV
             
                     switch path_
                         
+                        #   Statics
                         when '/' #< Serve static client html
                             res.writeHead(200, {'Content-Type': 'text/html'})
-                            fs.readFile(@CLIENT_FILE, {encoding:'utf-8'}, (err, data)->res.end(data))
-
+                            fs.readFile(@CLIENT_HTML, {encoding:'utf-8'}, (err, data)->res.end(data))
+                            
+                        when '/css' #< Serve static client css
+                            res.writeHead(200, {'Content-Type': 'text/css'})
+                            fs.readFile(@CLIENT_CSS, {encoding:'utf-8'}, (err, data)->res.end(data))
+                        
+                        when '/favicon.ico' #< Favicon
+                            res.writeHead(200, {'Content-Type': 'image/x-icon'} )
+                            fs.readFile(@CLIENT_ICON, {encoding:'utf-8'}, (err, data)->res.end(data))
+                            
+                        #   Dynamics
                         when '/client' #< Serve the client coffeescript
                             res.writeHead(200, {'Content-Type': 'application/javascript'})
                             fs.readFile(@CLIENT_COFFEE, {encoding:'utf-8'}, (err, data) ->
                                 res.end(CoffeeScript.compile(data)) #< @todo globalize the load, this is good for testing
                             )
-                        
-                        when '/favicon.ico' #< Favicon
-                            res.writeHead(200, {'Content-Type': 'image/x-icon'} )
-                            #   @todo..make an icon
-                            res.end('Success')
                             
                         when '/list_dir' #< List dir
                             res.writeHead(200, {'Content-Type': 'application/javascript'})
@@ -76,7 +81,7 @@ class MakeMKVServer extends MakeMKV
                         
         ).listen(@LISTEN_PORT)
         
-        @socket = io.listen(server)
+        @socket = io.listen(server,)# {log: false})
         console.log('Listening on ' + @LISTEN_PORT)
         
         #   Bind socket actions on client connect
@@ -154,7 +159,8 @@ class MakeMKVServer extends MakeMKV
         for cmd in @CMD_ORDER
             if typeof(@cache[cmd]) == 'object'
                 for namespace of @cache[cmd]
-                    cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
+                    if @cache[cmd][namespace]
+                        cached.push({'cmd':cmd, 'data':@cache[cmd][namespace]})
         
         #   Disable busy drive panels
         for disc_id, busy of @busy_devices
@@ -192,10 +198,13 @@ class MakeMKVServer extends MakeMKV
 
         @cache[cmd][namespace] = {'cache_refreshed': new Date(), 'data': data }
         
-        cmd_index = @CMD_ORDER.indexOf(cmd) + 1
-        for i in @CMD_ORDER[cmd_index...]
-            if @cache[i]
-                @cache[i][namespace] = undefined
+        ##   Delete now stale entries
+        #cmd_index = @CMD_ORDER.indexOf(cmd) + 1
+        #if @CMD_ORDER[cmd_index]
+        #    for i in @CMD_ORDER[cmd_index...]
+        #        if @cache[i]
+        #            console.log('Clearing ' + i + ' ' + namespace + ' was ' + @cache[i][namespace])
+        #            @cache[i][namespace] = undefined
         
         @cache[cmd][namespace]
     

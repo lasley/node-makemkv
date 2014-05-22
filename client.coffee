@@ -72,7 +72,6 @@ class MakeMKVClient
             console.log('Client sent: ', data)
         )
         
-        
         if bind
             @_bind()
     
@@ -193,7 +192,8 @@ class MakeMKVClient
     new_disc_panel: (drive, disc_name='None', width=6) =>
         
         container = @_new_el(false, 'col-lg-' + width)
-        panel = @_new_el(container, 'panel panel-default', 'div', {id:drive})
+        panel = @_new_el(container, 'panel panel-info disc_', 'div', {id:drive})
+        
         heading = @_new_el(panel, 'panel-heading')
         header_container = @_new_el(heading)
 
@@ -238,10 +238,10 @@ class MakeMKVClient
         for drive, disc of data
             
             if panel = document.getElementById(drive)
+                panel.className = 'panel panel-info disc_'
                 panel = panel.parentNode
             else
                 panel = @new_disc_panel(drive, drive + ': ' + disc)
-                panel.addClass('disc_')    
                 @_panel_shift(panel)
         
         @_panel_disable(false, false)
@@ -274,6 +274,7 @@ class MakeMKVClient
     disc_info: (socket_in) =>
         
         data = socket_in.data
+        document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
         
         #   Get Disc panel body and clear it
         disc_panel = document.getElementById(data.disc_id + '_body')
@@ -387,14 +388,31 @@ class MakeMKVClient
         console.log(socket_in)
         
         data = socket_in['data']
-        panel = $(document.getElementById(data['disc_id']))
+        panel_ = document.getElementById(data['disc_id'])
+        panel = $(panel_)
         
         @_panel_disable(panel, false)
 
+        results = []
         for track_id, result of data['results']
-            result =  if result then 'bg-success' else 'bg-danger'
+            
+            if result
+                result = 'bg-success'
+                results.push(true)
+            else
+                result = 'bg-danger'
+                results.push(false)
+                
             chk_box = panel.find('input[data-track-id="' + track_id + '"]')
             $(chk_box).parent().parent().removeClass().addClass(result)
+            
+        if false in results
+            if true in results
+                panel_.className = 'panel panel-warning disc_'
+            else
+                panel_.className = 'panel panel-danger disc_'
+        else
+            panel_.className = 'panel panel-success disc_'
             
     #   List directory in a modal
     #   @param  list    dir Directory listing
@@ -472,5 +490,7 @@ class MakeMKVClient
             
         panel.find(':input').prop('disabled', disable)
         
+        if disable
+            panel.removeClass().addClass('panel panel-default disc_')
             
 client = new MakeMKVClient()
