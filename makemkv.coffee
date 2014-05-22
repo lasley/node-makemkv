@@ -353,36 +353,36 @@ class MakeMKV
             for part_id of info_out['data']['tracks'][track_id]['track_parts']
                 track_part = info_out['data']['tracks'][track_id]['track_parts'][part_id]
                 info_out['data']['tracks'][track_id]['cnts'][track_part['Type']]++
-        #
-        #if has_tracks
-        #    
-        #   Sanitize Title Names
-        title = info_out['data']['disc']['Name']
-        fallbacks = []
-        fallbacks_ = ['Tree Info', 'Volume Name']
         
-        for type_ in fallbacks_
-            if info_out['data']['disc'][type_]
-                fallbacks.push(info_out['data']['disc'][type_])
+        if has_tracks
+            
+            #   Sanitize Title Names
+            title = info_out['data']['disc']['Name']
+            fallbacks = []
+            fallbacks_ = ['Tree Info', 'Volume Name']
+            
+            for type_ in fallbacks_
+                if info_out['data']['disc'][type_]
+                    fallbacks.push(info_out['data']['disc'][type_])
+                    
+            info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
+            
+            info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
+    
+            if callback
+                callback(info_out)
+            else
+                info_out #< Return
                 
-        info_out['data']['disc']['Sanitized'] = @sanitizer.do_sanitize(title, fallbacks)
-        
-        info_out['data'] = @choose_tracks(info_out['data']) #<  Autoselect titles
-
-        if callback
-            callback(info_out)
         else
-            info_out #< Return
-        #        
-        #else
-        #    
-        #    error = 'disc_info failed, no tracks found.'
-        #    console.log(error)
-        #    
-        #    if callback
-        #        callback(info_out)
-        #    else
-        #        info_out
+            
+            error = 'disc_info failed, no tracks found.'
+            console.log(error)
+            
+            if callback
+                callback(info_out)
+            else
+                info_out
 
     ##  Generic Application Spawn
     #   @param  list    args    List of str arguments
@@ -390,6 +390,8 @@ class MakeMKV
     #   @param  str     path    to binary
     #   @callback(list    List of lines returned from err and out @todo - split these)
     _spawn_generic: (args, callback=false, path=@MAKEMKVCON_PATH) =>
+        
+        console.log('Spawning ' + path + ' with args ' + args)
         
         #   Spawn process, init return var
         makemkv = spawn(path, args)
