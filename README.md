@@ -67,19 +67,19 @@
 
 *   Navigate to `SERVER_HOSTNAME:LISTEN_PORT` to view the GUI
 
-    <div class="align-center image-align-center">[![node-makemkv-gui-1.png](https://blog.dlasley.net/user-files/plugins/blogtext/api/thumbnail/do.php?id=7fd06b9d290478f843a943b72d2ddf2785489601_542x0_resize_if_larger "node-makemkv-gui-1.png")](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-gui-1.png "node-makemkv-gui-1.png")</div>
+    ![node-makemkv-gui-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-gui-1.png "node-makemkv-gui-1.png")
 
 *   Click the `Refresh Drives` button to scan available drives for discs
 
-    <div class="align-center image-align-center">[![node-makemkv-refresh-1.png](https://blog.dlasley.net/user-files/plugins/blogtext/api/thumbnail/do.php?id=f7df313e30a09d1426385a7185da352977d1253e_542x0_resize_if_larger "node-makemkv-refresh-1.png")](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-refresh-1.png "node-makemkv-refresh-1.png")</div>
+    ![node-makemkv-refresh-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-refresh-1.png "node-makemkv-refresh-1.png")
 
 *   Click any of the `Get Info` buttons to get disc level information for a specific drive. Panels with the header title `None` do not have a valid disc in the drive (or some other drive level error)
 
-    <div class="align-center image-align-center">[![node-makemkv-getinfo-1.png](https://blog.dlasley.net/user-files/plugins/blogtext/api/thumbnail/do.php?id=21c7978eedb2eebe6f8e5b028f1b11dbf69aed04_542x0_resize_if_larger "node-makemkv-getinfo-1.png")](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-getinfo-1.png "node-makemkv-getinfo-1.png")</div>
+    ![node-makemkv-getinfo-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-getinfo-1.png "node-makemkv-getinfo-1.png")</div>
 
 *   Once the disc has been scanned, track information will be displayed in the disc panel. Use the checkboxes in the rip column to select which tracks you would like to rip, and the `Rip Tracks` button to initiate ripping. The `Disc Name` field can be used to define the folder that MakeMKV will rip into for this disc (relative to the `Output Directory` defined earlier)
 
-    <div class="align-center image-align-center">[![node-makemkv-discinfo-panel-1.png](https://blog.dlasley.net/user-files/plugins/blogtext/api/thumbnail/do.php?id=600998bbeb33192dc5387373a48deba7f6448d60_542x0_resize_if_larger "node-makemkv-discinfo-panel-1.png")](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-discinfo-panel-1.png "node-makemkv-discinfo-panel-1.png")</div>
+    ![node-makemkv-discinfo-panel-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-discinfo-panel-1.png "node-makemkv-discinfo-panel-1.png")
 
 ## Repos [∞](#repos "Link to this section")
 
