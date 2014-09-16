@@ -277,7 +277,7 @@ class MakeMKV
                 
             else
                 errors = errors.join('')
-                console.log('disc_info failed on #{disc_id}. Output was:{@NEWLINE_CHAR}'+
+                console.log('disc_info failed on #{dir}. Output was:{@NEWLINE_CHAR}'+
                             '"#{errors}"{@NEWLINE_CHAR}')
                 false
         )
