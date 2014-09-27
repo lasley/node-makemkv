@@ -127,8 +127,8 @@ class MakeMKVClient
         )
         
         #   Panel collapse/expand
-        .on('click', '.panel-title', (event) =>
-            panel = document.getElementById(event.currentTarget.id.split('_')[0]) #< id=disc_title
+        .on('click', '.panel-toggle', (event) =>
+            panel = document.getElementById(event.currentTarget.getAttribute('data-drive-id')) #< id=disc_title
             @_panel_collapse(panel)
         )
         
@@ -196,15 +196,26 @@ class MakeMKVClient
         
         heading = @_new_el(panel, 'panel-heading')
         header_container = @_new_el(heading)
-
+        
         title = @_new_el(header_container, 'panel-title', 'div', {id:drive + '_title'})
-        title.css('cursor', 'pointer')
         
         t_grid = @_new_el(title, 'row')
-        @_new_el(t_grid, 'col-sm-11', 'div', {html:disc_name})
-        g_div = @_new_el(t_grid, 'col-sm-1', 'div')
         
-        glyph = @_new_el(g_div, 'glyphicon glyphicon-minus', 'span')
+        #   Get Disc Info Button
+        _div = @_new_el(t_grid, 'col-sm-1', 'div')
+        refresh_btn = @_new_el(_div, 'btn btn-default disc-info-btn get-info',
+                               'button', {'data-drive-id':drive, 'type':'button', }
+        )
+        @_new_el(refresh_btn, 'glyphicon glyphicon-refresh get-info', 'span',
+                {'data-drive-id':drive, 'type':'button',})
+        
+        @_new_el(t_grid, 'col-sm-10', 'div', {html:disc_name})
+        
+        _div = @_new_el(t_grid, 'col-sm-1', 'div')
+        refresh_btn = @_new_el(_div, 'btn btn-default disc-info-btn panel-toggle',
+                               'button', {'data-drive-id':drive, 'type':'button', }
+        )
+        @_new_el(refresh_btn, 'glyphicon glyphicon-minus', 'span')
 
         body = @_new_el(panel, 'panel-body', 'div', {id:drive + '_body'})
         footer = @_new_el(panel, 'panel-footer', 'div')
