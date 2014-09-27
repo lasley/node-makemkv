@@ -2,17 +2,7 @@
 
 
  Node-MakeMKV is the successor to [Remote-MakeMKV](https://blog.dlasley.net/2013/01/remote-makemkv/). The intent of this project is to provide a web front end for MakeMKV to allow for a headless ripping server. This application is written in CoffeeScript and Node.js. The server has been successfully tested on Linux (Ubuntu and CentOS). The client has been successfully tested in all major desktop and mobile browsers.
-
-<div class="toc">
-<div class="toc-title">Table of Contents <span class="toc-toggle">[[hide](javascript:toggle_toc(399);)]</span></div>
-<div id="_toclist_399">
-
-*   [<span class="tocnumber">1</span> <span class="toctext">Downloads</span>](#downloads)
-*   [<span class="tocnumber">2</span> <span class="toctext">Installation</span>](#installation)
-*   [<span class="tocnumber">3</span> <span class="toctext">Usage</span>](#usage)
-*   [<span class="tocnumber">4</span> <span class="toctext">Repos</span>](#repos)
-</div>
-</div>
+ 
 
 ## Installation [∞](#installation "Link to this section")
 
