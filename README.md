@@ -1,28 +1,8 @@
-#### This is a conversion from instructions located at https://blog.dlasley.net/projects/remote-makemkv/ 
-
-#### Apologies, I'm working on a real Markdown version...
-
 # Node MakeMKV: The Missing Web UI
 
 
  Node-MakeMKV is the successor to [Remote-MakeMKV](https://blog.dlasley.net/2013/01/remote-makemkv/). The intent of this project is to provide a web front end for MakeMKV to allow for a headless ripping server. This application is written in CoffeeScript and Node.js. The server has been successfully tested on Linux (Ubuntu and CentOS). The client has been successfully tested in all major desktop and mobile browsers.
-
-<div class="toc">
-<div class="toc-title">Table of Contents <span class="toc-toggle">[[hide](javascript:toggle_toc(399);)]</span></div>
-<div id="_toclist_399">
-
-*   [<span class="tocnumber">1</span> <span class="toctext">Downloads</span>](#downloads)
-*   [<span class="tocnumber">2</span> <span class="toctext">Installation</span>](#installation)
-*   [<span class="tocnumber">3</span> <span class="toctext">Usage</span>](#usage)
-*   [<span class="tocnumber">4</span> <span class="toctext">Repos</span>](#repos)
-</div>
-</div>
-
-## Downloads [∞](#downloads "Link to this section")
-
-*   [Node-MakeMKV Alpha1 (.tar.gz)](http://blog.dlasley.net/user-files/uploads/node-makemkv-1.1.0-alpha.tar.gz)
-*   [Node-MakeMKV Alpha1 (.zip)](http://blog.dlasley.net/user-files/uploads/node-makemkv-1.1.0-alpha.zip)
-*   [GitHub](https://github.com/dlasley/node-makemkv/releases/tag/v1.1.0-alpha)
+ 
 
 ## Installation [∞](#installation "Link to this section")
 
@@ -83,5 +63,5 @@
 
 ## Repos [∞](#repos "Link to this section")
 
-*   [Mercurial](https://repo.dlasley.net/remote_makemkv/file/0ec3db7cb4ef)
 *   [GitHub](https://github.com/dlasley/node-makemkv)
+*   [Private Mirror](https://repo.laslabs.com/video-manipulation/node-makemkv/)
