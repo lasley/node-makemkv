@@ -9,7 +9,7 @@
     "xml2js": "^0.4.2"
   },
   "devDependencies": {
-    "coffee-script": "^1.7.1",
+    "coffee-script": "^1.7.1"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
