@@ -209,7 +209,7 @@ class MakeMKVClient
         @_new_el(refresh_btn, 'glyphicon glyphicon-refresh get-info', 'span',
                 {'data-drive-id':drive, 'type':'button',})
         
-        @_new_el(t_grid, 'col-sm-10', 'div', {html:disc_name})
+        @_new_el(t_grid, 'col-sm-10 title-text', 'div', {html:disc_name})
         
         _div = @_new_el(t_grid, 'col-sm-1', 'div')
         refresh_btn = @_new_el(_div, 'btn btn-default disc-info-btn panel-toggle',
@@ -280,7 +280,7 @@ class MakeMKVClient
             #   @todo - actually shift the panels
             
     #   Callback for disc_info cmd
-    #       Displays disc info in disc pane
+    #       Displays disc info in disc panel
     #   @param  dict    socket_in  Data dict passed from server
     disc_info: (socket_in) =>
         
@@ -295,9 +295,9 @@ class MakeMKVClient
             disc_panel.html('')
             @_panel_disable(disc_panel, false)
             title = data.disc_id + ': ' + data.disc.Name
-            document.getElementById(data.disc_id + '_title').childNodes[0].nodeValue = title
+            $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
         
-        else
+        else    #   Fallback for directory panel
             
             is_dir = true
             title = data.dir + ': ' + data.disc.Name
