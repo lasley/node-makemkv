@@ -423,7 +423,7 @@ class MakeMKV
         makemkv.on('exit', (code)=>
             return_ = return_.join('')
             
-            if return_.indexOf('Evaluation period has expired') != -1
+            if return_.indexOf('This application version is too old') != -1
                 @emitter.emit('error', 'EvalExpired', 'MakeMKV Evaluation Period Has Expired. Please obtain a new license key at <a href="http://www.makemkv.com/">http://www.makemkv.com/</a>.')
             else
                 callback(code, return_.split(@NEWLINE_CHAR))
