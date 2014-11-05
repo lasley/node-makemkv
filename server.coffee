@@ -10,6 +10,7 @@
 #   @license    GPLv3
 ###
 
+udev = require('udev')
 http = require('http')
 io = require('socket.io')
 url = require('url')
@@ -33,6 +34,7 @@ class MakeMKVServer extends MakeMKV
         @cache = {}
         @change_out_dir() #< Prime the out dir cache
         
+        ##  Serve the UI
         server = http.createServer((req, res) =>
             
             req.setEncoding 'utf8'
@@ -81,8 +83,13 @@ class MakeMKVServer extends MakeMKV
                         
         ).listen(@LISTEN_PORT)
         
+        
         @socket = io.listen(server,)# {log: false})
         console.log('Listening on ' + @LISTEN_PORT)
+        
+        monitor = udev.monitor()
+        monitor.on('change', @_udev_change)
+        console.log('Set udev hook to monitor device changes')
         
         #   Bind socket actions on client connect
         @socket.on('connection', (client) =>
@@ -280,15 +287,77 @@ class MakeMKVServer extends MakeMKV
             callback(folder_data)
         )
         
+            
+        ##  Scan drives, return info. Also sets @drive_map
+    #   @param  func    callback Callback function, will receive drives as param
+    #   @return dict    drives  Dict keyed by drive index, value is movie name
+    scan_drives: (callback=false) =>
+        
+        if @toggle_busy(false, true) #< Make sure none of the discs are busy
+            drives = {'cmd':'scan_drives', 'data':{}}
+            @drive_map = {}
+            #   Spawn MakeMKV with callback
+            @_spawn_generic(['-r', 'info'], (code, drive_scan)=>
+                try
+                    for line in drive_scan
+                        #   DRV to make sure it's drive output, /dev to make sure that there is a drive
+                        if line[0..3] == 'DRV:' and line.indexOf('/dev/') != -1 
+                            info = line.split(@COL_PATTERN)
+                            #   Assign drive_location, strip quotes
+                            drive_location = info[info.length - 2][1..-2]
+                            #   [Drive Index] = Movie Name
+                            if info[info.length - 4] != '""'
+                                #   Assign drive info, strip quotes
+                                drives['data'][drive_location] =  info[info.length - 4][1..-2]
+                            else
+                                drives['data'][drive_location] = false 
+                            @drive_map[drive_location] = info[1].split(':')[1] #<    Index the drive location to makemkv's drive ID
+                catch err
+                    console.log('disc_scan: ' + err)
+                    
+                @toggle_busy(false)
+
+                if callback
+                    callback(drives)
+                else
+                    drives
+            )
+    
+    
+    ##  Receiver for udev change event. Fires media info to clients if it is a media disc.
+    #       Also begins disc_info(device.DEVNAME)
+    _udev_change: (device) =>
+        
+        if '1' in [device.ID_CDROM_DVD, device.ID_CDROM_BD, device.ID_CDROM_MEDIA]
+            
+            if device.ID_FS_LABEL
+                
+                @_do_emit(@socket, {'cmd':'udev_update', 'data':{
+                    'disc_id': device.DEVNAME,
+                    'label': device.ID_FS_LABEL or device.ID_FS_LABEL_ENC
+                }})
+                
+                @_do_emit(@socket, {'cmd': '_panel_disable', 'data': {
+                    'disc_id':device.DEVNAME, "busy":true
+                }})
+                
+                @disc_info(device.DEVNAME, (data) =>
+                    @_do_emit(@socket, data)
+                )
+                
+            else 
+                console.log("Disc probably ejected " + device.DEVNAME)
+    
         
     ##  Error handler
     #   @param  str type    Type of error
     #   @param  str msg     Error msg
-    error: (type, msg) =>
-        @
+    _error: (type, msg) =>
+        @_do_emit(@socket, {'cmd': '_error', 'data':{
+            'type': type, 'msg': msg
+        }})
+        
         
 server = new MakeMKVServer()
 
-server.emitter.on('error', (type, msg) =>
-    server._do_emit(server.socket, {'cmd':'_error', 'data':{'type':type, 'msg':msg}})
-)
+server.emitter.on('error', server._error)

@@ -203,19 +203,23 @@ class MakeMKV
             @drive_map = {}
             #   Spawn MakeMKV with callback
             @_spawn_generic(['-r', 'info'], (code, drive_scan)=>
-                for line in drive_scan
-                    #   DRV to make sure it's drive output, /dev to make sure that there is a drive
-                    if line[0..3] == 'DRV:' and line.indexOf('/dev/') != -1 
-                        info = line.split(@COL_PATTERN)
-                        #   Assign drive_location, strip quotes
-                        drive_location = info[info.length - 2][1..-2]
-                        #   [Drive Index] = Movie Name
-                        if info[info.length - 4] != '""'
-                            #   Assign drive info, strip quotes
-                            drives['data'][drive_location] =  info[info.length - 4][1..-2]
-                        else
-                            drives['data'][drive_location] = false 
-                        @drive_map[drive_location] = info[1].split(':')[1] #<    Index the drive location to makemkv's drive ID
+                try
+                    for line in drive_scan
+                        #   DRV to make sure it's drive output, /dev to make sure that there is a drive
+                        if line[0..3] == 'DRV:' and line.indexOf('/dev/') != -1 
+                            info = line.split(@COL_PATTERN)
+                            #   Assign drive_location, strip quotes
+                            drive_location = info[info.length - 2][1..-2]
+                            #   [Drive Index] = Movie Name
+                            if info[info.length - 4] != '""'
+                                #   Assign drive info, strip quotes
+                                drives['data'][drive_location] =  info[info.length - 4][1..-2]
+                            else
+                                drives['data'][drive_location] = false 
+                            @drive_map[drive_location] = info[1].split(':')[1] #<    Index the drive location to makemkv's drive ID
+                catch err
+                    console.log('disc_scan: ' + err)
+                    
                 @toggle_busy(false)
 
                 if callback
@@ -246,7 +250,7 @@ class MakeMKV
                     if disc_info.indexOf('Failed to open disc') != -1
                         error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
                         console.log(error)
-                        callback({'cmd':'@_error', 'data':error})
+                        @_error('disc_info failed to open disc', error)
                     else
                         @parse_disc_info(disc_info, info_out, callback)
 
@@ -255,7 +259,7 @@ class MakeMKV
                 else
                     error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
                     console.log(error)
-                    callback({'cmd':'@_error', 'data':error})
+                    @_error('disc_info returned bad exit code', error)
             )
             
         else
@@ -282,17 +286,17 @@ class MakeMKV
             if code == 0
                 
                 if disc_info.indexOf('Failed to open disc') != -1
-                    error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                    error = 'scan_dir failed on ' + disc_id +'. Output was:\r\n'+ disc_info
                     console.log(error)
-                    callback({'cmd':'@_error', 'data':error})
+                    @_error('scan_dir failed to open disc', error)
                 else
                     @parse_disc_info(disc_info, info_out, callback)
                 
             else
                 
-                error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                error = 'scan_dir failed on ' + disc_id +'. Output was:\r\n'+ disc_info
                 console.log(error)
-                callback({'cmd':'@_error', 'data':error})
+                @_error('scan_dir returned bad exit code', error)
         )
             
     ##  Parse disc info as returned from MakeMKV
@@ -425,7 +429,7 @@ class MakeMKV
             
             if return_.indexOf('This application version is too old') != -1
                 error = 'MakeMKV Evaluation Period Has Expired. Please obtain a license key or update your software at <a href="http://www.makemkv.com/">http://www.makemkv.com/</a>.'
-                callback({'cmd':'@_error', 'data':error})
+                @_error('license_expired', error)
             else
                 callback(code, return_.split(@NEWLINE_CHAR))
         )

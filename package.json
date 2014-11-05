@@ -6,7 +6,8 @@
   "dependencies": {
     "ini": "^1.1.0",
     "socket.io": "^0.9.16",
-    "xml2js": "^0.4.2"
+    "xml2js": "^0.4.2",
+    "udev": "^0.1.0"
   },
   "devDependencies": {
     "coffee-script": "^1.7.1"

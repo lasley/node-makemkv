@@ -53,6 +53,9 @@ class MakeMKVClient
         #   Bind to receive/process socket cmds
         @socket.on('change_out_dir', (data) => @change_out_dir(data))
         @socket.on('scan_drives', (data) => @scan_drives(data))
+        @socket.on('udev_update', (data) =>
+            @scanned_drive(data.data.disc_id, data.data.label)
+        )
         @socket.on('disc_info', (data) => @disc_info(data))
         @socket.on('rip_track', (data) => @rip_track(data))
         @socket.on('list_dir', (data) => @list_dir(data))
@@ -247,15 +250,20 @@ class MakeMKVClient
         main_div = document.getElementById('main')
 
         for drive, disc of data
-            
-            if panel = document.getElementById(drive)
-                panel.className = 'panel panel-info disc_'
-                panel = panel.parentNode
-            else
-                panel = @new_disc_panel(drive, drive + ': ' + disc)
-                @_panel_shift(panel)
+            scanned_drive(drive, disc)
         
         @_panel_disable(false, false)
+    
+    ##  Single scanned drive callback
+    #   @param  str drive   drive id
+    #   @param  str disc    disc name
+    scanned_drive: (drive, disc) =>
+        if panel = document.getElementById(drive)
+            panel.className = 'panel panel-info disc_'
+            panel = panel.parentNode
+        else
+            panel = @new_disc_panel(drive, drive + ': ' + disc)
+            @_panel_shift(panel)
     
     ##  Add or remove a disc panel
     #   @param  obj     panel   Disc panel
