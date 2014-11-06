@@ -341,9 +341,10 @@ class MakeMKVServer extends MakeMKV
                     'disc_id':device.DEVNAME, "busy":true
                 }})
                 
-                @disc_info(device.DEVNAME, (data) =>
-                    @_do_emit(@socket, data)
-                )
+                if device.DEVNAME
+                    @disc_info(device.DEVNAME, (data) =>
+                        @_do_emit(@socket, data)
+                    )
                 
             else 
                 console.log("Disc probably ejected " + device.DEVNAME)
