@@ -343,7 +343,6 @@ class MakeMKVServer extends MakeMKV
                 
                 if device.DEVNAME
                     @disc_info(device.DEVNAME, (data) =>
-                        data['cmd'] = 'disc_info'
                         @_do_emit(@socket, data)
                     )
                 
