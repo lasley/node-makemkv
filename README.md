@@ -7,6 +7,8 @@
 ## Installation [∞](#installation "Link to this section")
 
 *   [Install Node.js and CoffeeScript](https://blog.dlasley.net/2014/04/installing-node-js-and-coffeescript/)
+*   Install libudev-dev (to monitor disc drives for changes)
+*   Install NodeMakemkv - `npm install node-makemkv/`
 *   Edit the `[settings]` section of `server_settings.ini` per the below specifications:
 
 Variable | Description
