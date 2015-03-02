@@ -235,35 +235,39 @@ class MakeMKV
     #   @return dict    info_out    Disc/track information
     disc_info: (disc_id, callback=false) =>
         
-        if @toggle_busy(disc_id, true) #< If disc not busy, set busy and go
-            
-            info_out = {
-                'data':{'disc':{}, 'tracks':{}, 'disc_id':disc_id}, 'cmd':'disc_info'
-            }
-            return_ = []
-            errors = []
-            
-            @_spawn_generic(['--noscan', '-r', 'info', 'dev:'+disc_id, ], (code, disc_info)=>
+        if disc_id:
+            if @toggle_busy(disc_id, true) #< If disc not busy, set busy and go
                 
-                if code == 0
+                info_out = {
+                    'data':{
+                        'disc':{}, 'tracks':{}, 'disc_id':disc_id
+                    },
+                    'cmd':'disc_info'
+                }
+                return_ = []
+                errors = []
+                
+                @_spawn_generic(['--noscan', '-r', 'info', 'dev:'+disc_id, ], (code, disc_info)=>
                     
-                    if disc_info.indexOf('Failed to open disc') != -1
+                    if code == 0
+                        
+                        if disc_info.indexOf('Failed to open disc') != -1
+                            error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
+                            console.log(error)
+                            @_error('disc_info failed to open disc', error)
+                        else
+                            @parse_disc_info(disc_info, info_out, callback)
+    
+                        @toggle_busy(disc_id)
+                        
+                    else
                         error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
                         console.log(error)
-                        @_error('disc_info failed to open disc', error)
-                    else
-                        @parse_disc_info(disc_info, info_out, callback)
-
-                    @toggle_busy(disc_id)
-                    
-                else
-                    error = 'disc_info failed on ' + disc_id +'. Output was:\r\n'+ disc_info
-                    console.log(error)
-                    @_error('disc_info returned bad exit code', error)
-            )
-            
-        else
-            false
+                        @_error('disc_info returned bad exit code', error)
+                )
+                
+            else
+                false
             
     ##  Get disc info from folder
     #   @param  str     dir         Dir to scan
