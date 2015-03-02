@@ -235,7 +235,7 @@ class MakeMKV
     #   @return dict    info_out    Disc/track information
     disc_info: (disc_id, callback=false) =>
         
-        if disc_id:
+        if disc_id
             if @toggle_busy(disc_id, true) #< If disc not busy, set busy and go
                 
                 info_out = {
