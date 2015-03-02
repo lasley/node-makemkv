@@ -64,4 +64,4 @@
 ## Repos [∞](#repos "Link to this section")
 
 *   [GitHub](https://github.com/dlasley/node-makemkv)
-*   [Private Mirror](https://repo.laslabs.com/video-manipulation/node-makemkv/)
+*   [Private Mirror](https://repo.dlasley.net/projects/VID/repos/node-makemkv/browse)
