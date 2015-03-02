@@ -202,6 +202,8 @@ class MakeMKVServer extends MakeMKV
         
         if typeof(@cache[cmd]) != 'object'
             @cache[cmd] = {}
+            
+        console.log('Setting cache for cmd ' + cmd + ' in namespace ' + namespace)
 
         @cache[cmd][namespace] = {'cache_refreshed': new Date(), 'data': data }
         
@@ -332,23 +334,25 @@ class MakeMKVServer extends MakeMKV
             
             if device.ID_FS_LABEL
                 
+                console.log('Disc inserted' + device.DEVNAME)
+                
                 @_do_emit(@socket, {'cmd':'udev_update', 'data':{
                     'disc_id': device.DEVNAME,
                     'label': device.ID_FS_LABEL or device.ID_FS_LABEL_ENC
                 }})
                 
-                @_do_emit(@socket, {'cmd': '_panel_disable', 'data': {
-                    'disc_id':device.DEVNAME, "busy":true
-                }})
-                
-                if device.DEVNAME
-                    @disc_info(device.DEVNAME, (data) =>
-                        @_do_emit(@socket, data)
-                    )
+                #@_do_emit(@socket, {'cmd': '_panel_disable', 'data': {
+                #    'disc_id':device.DEVNAME, "busy":true
+                #}})
                 
             else 
-                console.log("Disc probably ejected " + device.DEVNAME)
-    
+                console.log("Disc ejected " + device.DEVNAME)
+            
+            @disc_info(device.DEVNAME, (data) =>
+                data['disc_id'] = device.DEVNAME
+                console.log('??? --- ' + data['disc_id'])
+                @_do_emit(@socket, data)
+            )
         
     ##  Error handler
     #   @param  str type    Type of error

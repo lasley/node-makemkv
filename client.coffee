@@ -105,6 +105,7 @@ class MakeMKVClient
             @_socket_cmd('disc_info', drive_id)
         )
         
+        #   Track Rip Buttons (in each panel)
         .on('click', '.rip-tracks', (event) =>
             
             drive_id = event.currentTarget.getAttribute('data-drive-id')
@@ -133,6 +134,12 @@ class MakeMKVClient
         .on('click', '.panel-toggle', (event) =>
             panel = document.getElementById(event.currentTarget.getAttribute('data-drive-id')) #< id=disc_title
             @_panel_collapse(panel)
+        )
+        
+        #   Track row click to check
+        .on('click', '.track-row', (event) =>
+            checks = $(event.currentTarget).find('input:checkbox')
+            checks.prop('checked', !checks.prop('checked'))
         )
         
         $(document.getElementById('modal_select')).on('click', (event) =>
@@ -250,7 +257,7 @@ class MakeMKVClient
         main_div = document.getElementById('main')
 
         for drive, disc of data
-            scanned_drive(drive, disc)
+            @scanned_drive(drive, disc)
         
         @_panel_disable(false, false)
     
@@ -293,10 +300,16 @@ class MakeMKVClient
     disc_info: (socket_in) =>
         
         data = socket_in.data
+        console.log(data)
         
         #   Get Disc panel body and clear it
-        disc_panel = document.getElementById(data.disc_id + '_body')
-        if disc_panel
+        if data.disc_id.indexOf('/dev') > -1
+            
+            disc_panel = document.getElementById(data.disc_id + '_body')
+            
+            if not disc_panel
+                @_panel_shift(@new_disc_panel(data.disc_id, title))
+                disc_panel = document.getElementById(data.dir + '_body')
             
             document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
             disc_panel = $(disc_panel)
@@ -305,7 +318,8 @@ class MakeMKVClient
             title = data.disc_id + ': ' + data.disc.Name
             $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
         
-        else    #   Fallback for directory panel
+        #   Fallback for directory rip panel
+        else    
             
             is_dir = true
             title = data.dir + ': ' + data.disc.Name
@@ -320,86 +334,88 @@ class MakeMKVClient
             disc_panel.html('')
             document.getElementById(data.dir).className = 'panel panel-primary disc_'
         
-        #   Form and form container
-        form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
-        form_div = @_new_el(form, 'form-group')
-        
-        #   Label for input
-        label = @_new_el(form_div, 'col-sm-2 control-label', 'label', { 
-            'for':data['disc_id'] + '_name', html: 'Disc Name'
-        })
-        
-        #   Input container and input
-        input_div = @_new_el(form_div, 'col-sm-10')
-        input_el = @_new_el(input_div, 'form-control', 'input', {
-            placeholder:data['disc']['Sanitized'], value:data['disc']['Sanitized'],
-            id:data['disc_id'] + '_name'
-        })
-        
-        #   Table for all the tracks (and the responsive container for it)
-        tbl_cont = @_new_el(disc_panel, 'table-responsive')
-        table = @_new_el(tbl_cont, 'table table-bordered table-condensed table-hover', 'table')
-        
-        #   Disc info header map and loop
-        headers = {
-            '#':false, 'Source':'Source File Name', 'Chptrs':'Chapter Count',
-            'Size':'Disk Size', 'Track Types':'_ttypes', 'S-Map':'Segments Map',
-        }
-        
-        row = @_new_el(@_new_el(table, false, 'thead'), false, 'tr')
-        row.css('cursor', 'pointer')
-        
-        ripall = @_new_el(@_new_el(row, false, 'th'), 'rip-toggle', 'input',
-                          {type:'checkbox'})
-        
-        for header of headers
-            col = @_new_el(row, false, 'th', {html:header})
-            if header == 'Size'
-                col.attr('data-metric-name', 'b|byte')
-                col.addClass('sorter-metric')
-
-        tbody = @_new_el(table, false, 'tbody')
-        
-        #   Loop tracks, display data
-        for track_id, track_data of data['tracks']
+        if data.disc.Name #< Only display the form/table if there's actually a disc
             
-            #   Initial row, track #, checkboxes
-            row = @_new_el(tbody, false, 'tr')
+            #   Form and form container
+            form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
+            form_div = @_new_el(form, 'form-group')
             
-            col = @_new_el(row, false, 'td')
-            @_new_el(col, 'rip-chk', 'input', {
-                type:'checkbox', 'data-track-id':track_id,
-                'data-autochecked':track_data['_autochk'],
-                checked:track_data['_autochk']
+            #   Label for input
+            label = @_new_el(form_div, 'col-sm-2 control-label', 'label', { 
+                'for':data['disc_id'] + '_name', html: 'Disc Name'
             })
             
-            col = @_new_el(row, false, 'td', {html:track_id})
+            #   Input container and input
+            input_div = @_new_el(form_div, 'col-sm-10')
+            input_el = @_new_el(input_div, 'form-control', 'input', {
+                placeholder:data['disc']['Sanitized'], value:data['disc']['Sanitized'],
+                id:data['disc_id'] + '_name'
+            })
             
-            #   Fill Track Type Cnts
-            track_cnts = track_data['cnts']
-            cnt_key_order = ['Video', 'Audio', 'Subtitles']
-            track_data['_ttypes'] = []
-            for key in cnt_key_order
-                track_data['_ttypes'].push('<em>' + key + ':</em>' + track_cnts[key])
-            track_data['_ttypes'] = track_data['_ttypes'].join(', ')
+            #   Table for all the tracks (and the responsive container for it)
+            tbl_cont = @_new_el(disc_panel, 'table-responsive')
+            table = @_new_el(tbl_cont, 'table table-bordered table-condensed table-hover', 'table')
             
-            #   Loop the rest of the cols
-            for _, header of headers
-                if header
-                    col_data = track_data[header]
-                    @_new_el(row, false, 'td', {html:col_data})
-                    
-        table.tablesorter()
-                    
-        panel = $(document.getElementById(data['disc_id']))
-
-        if is_dir
-            panel.find('.get-info').addClass('hidden')
-        else
-            @_panel_disable(panel, false)
-        
-        #   Un-hide Rip Button
-        panel.find('.rip-tracks').removeClass('hidden')
+            #   Disc info header map and loop
+            headers = {
+                '#':false, 'Source':'Source File Name', 'Chptrs':'Chapter Count',
+                'Size':'Disk Size', 'Track Types':'_ttypes', 'S-Map':'Segments Map',
+            }
+            
+            row = @_new_el(@_new_el(table, false, 'thead'), false, 'tr')
+            row.css('cursor', 'pointer')
+            
+            ripall = @_new_el(@_new_el(row, false, 'th'), 'rip-toggle', 'input',
+                              {type:'checkbox'})
+            
+            for header of headers
+                col = @_new_el(row, false, 'th', {html:header})
+                if header == 'Size'
+                    col.attr('data-metric-name', 'b|byte')
+                    col.addClass('sorter-metric')
+    
+            tbody = @_new_el(table, false, 'tbody')
+            
+            #   Loop tracks, display data
+            for track_id, track_data of data['tracks']
+                
+                #   Initial row, track #, checkboxes
+                row = @_new_el(tbody, 'track-row', 'tr')
+                
+                col = @_new_el(row, false, 'td')
+                @_new_el(col, 'rip-chk', 'input', {
+                    type:'checkbox', 'data-track-id':track_id,
+                    'data-autochecked':track_data['_autochk'],
+                    checked:track_data['_autochk']
+                })
+                
+                col = @_new_el(row, false, 'td', {html:track_id})
+                
+                #   Fill Track Type Cnts
+                track_cnts = track_data['cnts']
+                cnt_key_order = ['Video', 'Audio', 'Subtitles']
+                track_data['_ttypes'] = []
+                for key in cnt_key_order
+                    track_data['_ttypes'].push('<em>' + key + ':</em>' + track_cnts[key])
+                track_data['_ttypes'] = track_data['_ttypes'].join(', ')
+                
+                #   Loop the rest of the cols
+                for _, header of headers
+                    if header
+                        col_data = track_data[header]
+                        @_new_el(row, false, 'td', {html:col_data})
+                        
+            table.tablesorter()
+                        
+            panel = $(document.getElementById(data['disc_id']))
+    
+            if is_dir
+                panel.find('.get-info').addClass('hidden')
+            else
+                @_panel_disable(panel, false)
+            
+            #   Un-hide Rip Button
+            panel.find('.rip-tracks').removeClass('hidden')
         
     #   Receive track rip status, output to GUI
     #   @param  dict    socket_in    Data dict passed from server
@@ -434,6 +450,22 @@ class MakeMKVClient
         else
             panel_.className = 'panel panel-success disc_'
             
+        #   Notify browser tab when done
+        is_old = true
+        title_obj = $('title')
+        title_old = title_obj.text()
+        title_new = 'Rip Complete! ' + title_old
+        interval = null
+        
+        changeTitle = () ->
+            document.title = is_old ? title_old : title_new
+            is_old = !is_old
+            
+        $(window).focus( () ->
+            clearInterval(interval)
+            title_obj.text(title_old)
+        )
+        
     #   List directory in a modal
     #   @param  list    dir Directory listing
     list_dir: (dir='/') =>
