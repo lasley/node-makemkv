@@ -8,36 +8,14 @@
 
 *   [Install Node.js and CoffeeScript](https://blog.dlasley.net/2014/04/installing-node-js-and-coffeescript/)
 *   Edit the `[settings]` section of `server_settings.ini` per the below specifications:
-<table style="max-width: 600px; margin-left: auto; margin-right: auto;">
-<thead>
-<tr>
-<th>**Variable**</th>
-<th>**Description**</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>`output_dir`</td>
-<td>Root ripping directory. Folders for each rip will be created inside of this directory.</td>
-</tr>
-<tr>
-<td>`listen_port`</td>
-<td>Port to listen on, defaults to `1337`</td>
-</tr>
-<tr>
-<td>`makemkvcon_path`</td>
-<td>Full path to makemkvcon binary, most likely won’t need to be changed</td>
-</tr>
-<tr>
-<td>`browse_jail`</td>
-<td>Root browsing directory.. client hopefully shouldn’t be able to go above this</td>
-</tr>
-<tr>
-<td>`outlier_modifier`</td>
-<td>For auto track selection, higher is more restrictive (selected if trackSize &gt;= discSizeUpperQuartile*outlier_modifier)</td>
-</tr>
-</tbody>
-</table>
+
+Variable | Description
+---------|-------------
+`output_dir` | Root ripping directory. Folders for each rip will be created inside of this directory.
+`listen_port` | Port to listen on, defaults to `1337`
+`makemkvcon_path` | Full path to makemkvcon binary, most likely won’t need to be changed
+`browse_jail` | Root browsing directory.. client hopefully shouldn’t be able to go above this
+`outlier_modifier` | For auto track selection, higher is more restrictive (selected if trackSize &gt;= discSizeUpperQuartile*outlier_modifier)
 
 *   Default MakeMKV selection profile as defined in ~/.MakeMKV/settings.conf will be used for track selections. I am currently working on defining these programmatically.
 
