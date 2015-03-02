@@ -105,6 +105,7 @@ class MakeMKVClient
             @_socket_cmd('disc_info', drive_id)
         )
         
+        #   Track Rip Buttons (in each panel)
         .on('click', '.rip-tracks', (event) =>
             
             drive_id = event.currentTarget.getAttribute('data-drive-id')
@@ -133,6 +134,12 @@ class MakeMKVClient
         .on('click', '.panel-toggle', (event) =>
             panel = document.getElementById(event.currentTarget.getAttribute('data-drive-id')) #< id=disc_title
             @_panel_collapse(panel)
+        )
+        
+        #   Track row click to check
+        .on('click', '.track-row', (event) =>
+            checks = $(event.currentTarget).find('input:checkbox')
+            checks.prop('checked', !checks.prop('checked'))
         )
         
         $(document.getElementById('modal_select')).on('click', (event) =>
@@ -364,7 +371,7 @@ class MakeMKVClient
         for track_id, track_data of data['tracks']
             
             #   Initial row, track #, checkboxes
-            row = @_new_el(tbody, false, 'tr')
+            row = @_new_el(tbody, 'track-row', 'tr')
             
             col = @_new_el(row, false, 'td')
             @_new_el(col, 'rip-chk', 'input', {
