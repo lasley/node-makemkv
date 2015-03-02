@@ -300,10 +300,16 @@ class MakeMKVClient
     disc_info: (socket_in) =>
         
         data = socket_in.data
+        console.log(data)
         
         #   Get Disc panel body and clear it
-        disc_panel = document.getElementById(data.disc_id + '_body')
-        if disc_panel
+        if data.disc_id.indexOf('/dev') > -1
+            
+            disc_panel = document.getElementById(data.disc_id + '_body')
+            
+            if not disc_panel
+                @_panel_shift(@new_disc_panel(data.disc_id, title))
+                disc_panel = document.getElementById(data.dir + '_body')
             
             document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
             disc_panel = $(disc_panel)
@@ -312,7 +318,8 @@ class MakeMKVClient
             title = data.disc_id + ': ' + data.disc.Name
             $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
         
-        else    #   Fallback for directory panel
+        #   Fallback for directory rip panel
+        else    
             
             is_dir = true
             title = data.dir + ': ' + data.disc.Name
