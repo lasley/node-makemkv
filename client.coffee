@@ -441,6 +441,22 @@ class MakeMKVClient
         else
             panel_.className = 'panel panel-success disc_'
             
+        #   Notify browser tab when done
+        is_old = true
+        title_obj = $('title')
+        title_old = title_obj.text()
+        title_new = 'Rip Complete! ' + title_old
+        interval = null
+        
+        changeTitle = () ->
+            document.title = is_old ? title_old : title_new
+            is_old = !is_old
+            
+        $(window).focus( () ->
+            clearInterval(interval)
+            title_obj.text(title_old)
+        )
+        
     #   List directory in a modal
     #   @param  list    dir Directory listing
     list_dir: (dir='/') =>
