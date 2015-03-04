@@ -137,9 +137,14 @@ class MakeMKVClient
         )
         
         #   Track row click to check
-        .on('click', '.track-row', (event) =>
-            checks = $(event.currentTarget).find('input:checkbox')
+        .on('click', '.track-row td', (event) =>
+            
+            if event.currentTarget.childNodes[0].type == 'checkbox'
+                return
+            
+            checks = $(event.currentTarget.parentElement).find('input:checkbox')
             checks.prop('checked', !checks.prop('checked'))
+        
         )
         
         $(document.getElementById('modal_select')).on('click', (event) =>
