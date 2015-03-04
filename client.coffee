@@ -275,12 +275,13 @@ class MakeMKVClient
     #   @param  str drive   drive id
     #   @param  str disc    disc name
     scanned_drive: (drive, disc) =>
+        
+        #   Kill old panel
         if panel = document.getElementById(drive)
-            panel.className = 'panel panel-info disc_'
-            panel = panel.parentNode
-        else
-            panel = @new_disc_panel(drive, drive + ': ' + disc)
-            @_panel_shift(panel)
+            @_panel_shift(panel, false)
+        
+        panel = @new_disc_panel(drive, drive + ' -- ' + disc)
+        @_panel_shift(panel)
     
     ##  Add or remove a disc panel
     #   @param  obj     panel   Disc panel
@@ -325,14 +326,14 @@ class MakeMKVClient
             disc_panel = $(disc_panel)
             disc_panel.html('')
             @_panel_disable(disc_panel, false)
-            title = data.disc_id + ': ' + data.disc.Name
+            title = data.disc_id + ' -- ' + data.disc.Name
             $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
         
         #   Fallback for directory rip panel
         else    
             
             is_dir = true
-            title = data.dir + ': ' + data.disc.Name
+            title = data.dir + ' -- ' + data.disc.Name
             data.disc_id = data.dir
             disc_panel = document.getElementById(data.dir + '_body')
             
