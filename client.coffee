@@ -127,7 +127,10 @@ class MakeMKVClient
         
         #   Select all checks (in disc panel)
         .on('change', '.rip-toggle', (event) ->
-            $(event.currentTarget).parents('table').find('.rip-chk').attr('checked', event.currentTarget.checked)
+            check = $(event.currentTarget)
+            check.parents('table').find('.rip-chk').prop(
+                'checked', !check.prop('checked')
+            )
         )
         
         #   Panel collapse/expand
@@ -139,8 +142,10 @@ class MakeMKVClient
         #   Track row click to check
         .on('click', '.track-row td', (event) =>
             
-            if event.currentTarget.childNodes[0].type == 'checkbox'
-                return
+            child = event.currentTarget.childNodes[0]
+            if child
+                if child.type == 'checkbox'
+                    return
             
             checks = $(event.currentTarget.parentElement).find('input:checkbox')
             checks.prop('checked', !checks.prop('checked'))
