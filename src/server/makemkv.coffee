@@ -26,7 +26,7 @@ class MakeMKV
         @COL_PATTERN = /((?:[^,"\']|"[^"]*"|\'[^']*\')+)/
         @busy_devices = {}
         
-        SETTINGS_PATH = path.join(__dirname, '/settings.json')
+        SETTINGS_PATH = path.join(__dirname, '..', 'settings.json')
         SETTINGS_DATA = JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf-8'))
         
         @ATTRIBUTE_IDS = SETTINGS_DATA.attribute_ids

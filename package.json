@@ -1,31 +1,31 @@
 {
-  "name": "makemkv",
-  "version": "0.1.0-beta",
-  "description": "Node MakeMKV",
-  "main": "index.js",
-  "dependencies": {
-    "ini": "^1.1.0",
-    "socket.io": "^0.9.16",
-    "xml2js": "^0.4.2",
-    "udev": "^0.1.0"
-  },
-  "devDependencies": {
-    "coffee-script": "^1.7.1"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/dlasley/node-makemkv"
-  },
-  "keywords": [
-    "makemkv"
-  ],
-  "author": "Dave Lasley <dave@dlasley.net> (https://blog.dlasley.net/)",
-  "license": "GPLv3",
-  "bugs": {
-    "url": "https://github.com/dlasley/node-makemkv/issues"
-  },
-  "homepage": "https://github.com/dlasley/node-makemkv"
+    "name": "MakeMKV",
+    "version": "1.0.0",
+    "description": "MakeMKV Web UI",
+    "main": "index.js",
+    "dependencies": {
+        "socket.io": "^0.9.16",
+        "xml2js": "^0.4.5",
+        "udev": "^0.1.1"
+    },
+    "devDependencies": {
+        "coffee-script": "^1.9.1",
+        "test": "0.6.0"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "makemkv"
+    ],
+    "author": "Dave Lasley <dave@dlasley.net> (https://blog.dlasley.net/)",
+    "license": "GPLv3",
+    "bugs": {
+        "url": "https://tickets.laslabs.com/browse/MKV"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://repo.dlasley.net/projects/VID/repos/node-makemkv"
+    },
+    "homepage": "https://blog.dlasley.net/projects/remote-makemkv/"
 }
