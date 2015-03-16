@@ -46,5 +46,6 @@ Variable | Description
 
 ## Repos [∞](#repos "Link to this section")
 
-*   [GitHub](https://github.com/dlasley/node-makemkv)
-*   [Private Mirror](https://repo.dlasley.net/projects/VID/repos/node-makemkv/browse)
+*   [Main Development](https://repo.dlasley.net/projects/VID/repos/node-makemkv/browse)
+*   [GitHub Mirror](https://github.com/dlasley/node-makemkv)
+
