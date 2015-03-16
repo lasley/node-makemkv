@@ -6,26 +6,29 @@
 
 ## Installation [∞](#installation "Link to this section")
 
+*   [Install MakeMKV](http://www.makemkv.com/)
 *   [Install Node.js and CoffeeScript](https://blog.dlasley.net/2014/04/installing-node-js-and-coffeescript/)
-*   Install libudev-dev (to monitor disc drives for changes)
-*   Install NodeMakemkv - `npm install node-makemkv/`
-*   Edit the `[settings]` section of `server_settings.ini` per the below specifications:
+*   Install libudev-dev (to monitor disc drives for changes - optional)
+*   Install NodeMakemkv - `npm install node-makemkv`
+*   Copy default conversion profile and edit to your liking - `cp conversion_profile.dist.xml conversion_profile.xml`
+*   Copy settings file - `cp settings.dist.json settings.json`
+*   Edit the `USER_SETTINGS` section of `settings.json` per the below specifications:
 
 Variable | Description
 ---------|-------------
 `output_dir` | Root ripping directory. Folders for each rip will be created inside of this directory.
+`source_dir` | Jail directory for client side browsing/ripping (`Browse Filesystem` button)
 `listen_port` | Port to listen on, defaults to `1337`
 `makemkvcon_path` | Full path to makemkvcon binary, most likely won’t need to be changed
-`browse_jail` | Root browsing directory.. client hopefully shouldn’t be able to go above this
 `outlier_modifier` | For auto track selection, higher is more restrictive (selected if trackSize &gt;= discSizeUpperQuartile*outlier_modifier)
 
-*   Default MakeMKV selection profile as defined in ~/.MakeMKV/settings.conf will be used for track selections. I am currently working on defining these programmatically.
+*   Default MakeMKV selection profile as defined in ~/.MakeMKV/settings.conf will be used for track selections.
 
 ## Usage [∞](#usage "Link to this section")
 
-*   Run the server – `coffee ./server.coffee` – _Note: you must run the server as a user that has permissions to read from optical media_
+*   Run the server – `coffee ./run.coffee` – _Note: you must run the server as a user that has permissions to read from optical media_
 
-*   Navigate to `SERVER_HOSTNAME:LISTEN_PORT` to view the GUI
+*   Navigate to `http://$SERVER_IP:$LISTEN_PORT` to view the GUI
 
     ![node-makemkv-gui-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-gui-1.png "node-makemkv-gui-1.png")
 
@@ -33,7 +36,7 @@ Variable | Description
 
     ![node-makemkv-refresh-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-refresh-1.png "node-makemkv-refresh-1.png")
 
-*   Click any of the `Get Info` buttons to get disc level information for a specific drive. Panels with the header title `None` do not have a valid disc in the drive (or some other drive level error)
+*   Click any of the `Refresh Disc` buttons to get disc level information for a specific drive. Panels with the header title `None` do not have a valid disc in the drive (or some other drive level error)
 
     ![node-makemkv-getinfo-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-getinfo-1.png "node-makemkv-getinfo-1.png")</div>
 

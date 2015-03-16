@@ -419,7 +419,3 @@ class MakeMKVServer extends MakeMKV
         @_do_emit(@socket, {'cmd': '_error', 'data':{
             'type': type, 'msg': msg
         }})
-        
-        
-server = new MakeMKVServer()
-server.emitter.on('error', server._error)

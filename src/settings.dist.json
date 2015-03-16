@@ -4,16 +4,7 @@
         "source_dir": "/media/Motherload/test-backups",
         "listen_port": 1337,
         "makemkvcon_path": "/usr/bin/makemkvcon",
-        "outlier_modifier": 0.7,
-        "selection_profile": [
-            "-sel:all",
-            "+sel:audio&(eng)",
-            "+sel:mvcvideo",
-            "+sel:subtitle",
-            "+sel:special",
-            "=100:all",
-            "-10:favlang"
-        ]
+        "outlier_modifier": 0.7
     },
     "attribute_ids": {
         0: "Unknown",
