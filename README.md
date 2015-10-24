@@ -23,7 +23,9 @@ Variable | Description
 
 ## Usage [∞](#usage "Link to this section")
 
-*   Run the server – `coffee ./server.coffee` – _Note: you must run the server as a user that has permissions to read from optical media_
+*   Clone the repo - `git clone https://github.com/lasley/node-makemkv.git`
+
+*   Run the server – `coffee ./node-makemkv/server.coffee` – _Note: you must run the server as a user that has permissions to read from optical media_
 
 *   Navigate to `SERVER_HOSTNAME:LISTEN_PORT` to view the GUI
 
