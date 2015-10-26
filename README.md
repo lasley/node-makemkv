@@ -9,7 +9,7 @@
 *   [Install Node.js and CoffeeScript](https://blog.dlasley.net/2014/04/installing-node-js-and-coffeescript/)
 *   Install libudev-dev (to monitor disc drives for changes)
 *   Install NodeMakemkv - `npm install node-makemkv/`
-*   Edit the `[settings]` section of `server_settings.ini` per the below specifications:
+*   Edit the `[settings]` section of `settings.json` per the below specifications:
 
 Variable | Description
 ---------|-------------
@@ -24,6 +24,14 @@ Variable | Description
 ## Usage [∞](#usage "Link to this section")
 
 *   Clone the repo - `git clone https://github.com/lasley/node-makemkv.git`
+
+*   Install dependencies with npm - `npm install ./node-makemkv`
+
+*   Copy the example settings file to the correct location - `cp ./node-makemkv/settings.example.json ./node-makemkv/settings.json`
+
+*   Copy the example profile to the correct location - `cp ./node-makemkv/conversion_profile_example.xml ./node-makemkv/conversion_profile.xml`
+
+*   Update the `conversion_profile` path in `settings.json`
 
 *   Run the server – `coffee ./node-makemkv/server.coffee` – _Note: you must run the server as a user that has permissions to read from optical media_
 
