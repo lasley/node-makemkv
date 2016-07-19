@@ -25,13 +25,17 @@ Variable | Description
 
 *   Clone the repo - `git clone https://github.com/lasley/node-makemkv.git`
 
+*   Install apt dependencies (will need to adapt for RHEL/CentOS) - `sudo apt-get install nodejs-legacy npm libudev-dev`
+
+*   Install coffeescript interpreter - `sudo npm install -g coffee-script`
+
 *   Install dependencies with npm - `npm install ./node-makemkv`
 
 *   Copy the example settings file to the correct location - `cp ./node-makemkv/settings.example.json ./node-makemkv/settings.json`
 
 *   Copy the example profile to the correct location - `cp ./node-makemkv/conversion_profile_example.xml ./node-makemkv/conversion_profile.xml`
 
-*   Update the `conversion_profile` path in `settings.json`
+*   Update the `conversion_profile` and `output_dir` paths in `settings.json`
 
 *   Run the server – `coffee ./node-makemkv/server.coffee` – _Note: you must run the server as a user that has permissions to read from optical media_
 
@@ -39,13 +43,7 @@ Variable | Description
 
     ![node-makemkv-gui-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-gui-1.png "node-makemkv-gui-1.png")
 
-*   Click the `Refresh Drives` button to scan available drives for discs
-
-    ![node-makemkv-refresh-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-refresh-1.png "node-makemkv-refresh-1.png")
-
-*   Click any of the `Get Info` buttons to get disc level information for a specific drive. Panels with the header title `None` do not have a valid disc in the drive (or some other drive level error)
-
-    ![node-makemkv-getinfo-1.png](https://blog.dlasley.net/user-files/uploads/2014/04/node-makemkv-getinfo-1.png "node-makemkv-getinfo-1.png")</div>
+*   Insert DVD or BluRay into server
 
 *   Once the disc has been scanned, track information will be displayed in the disc panel. Use the checkboxes in the rip column to select which tracks you would like to rip, and the `Rip Tracks` button to initiate ripping. The `Disc Name` field can be used to define the folder that MakeMKV will rip into for this disc (relative to the `Output Directory` defined earlier)
 
