@@ -21,8 +21,8 @@
             <form class='form-horizontal'>
               <div class='form-group'>
                 <label for='output_dir' class='col-sm-2 control-label'>Output Dir:</label>
-                <div class='col-sm-12'>
-                  <input type='text' id='output_dir' class='form-control' />
+                <div class='col-sm-10'>
+                  <input type='text' id='output_dir' class='form-control' readonly="1" />
                 </div>
               </div>
             </form>
@@ -35,11 +35,11 @@
             <div class='col-sm-1 col-md-offset-4 col-sm-offset-4'>
               <button type='button' class='btn btn-default' id='browse_fs'>Browse Filesystem</button>
             </div>
+            -->
             <div class='col-sm-1 col-md-offset-3 col-sm-offset-3'>
-              <button type='button' class='btn btn-default disc-btn' id='refresh_all'>Refresh Drive(s)</button>
+              <button type='button' class='btn btn-default disc-btn hidden' id='refresh_all'>Refresh Drive(s)</button>
             </div>
           </div>
-          -->
       </div>
       <!-- MakeMKV Data Placeholder -->
       <div id='main'> </div>
@@ -64,12 +64,10 @@
               </form>
             </div>
           </div>
-          <!-- 
           <div class='modal-footer' id='modal_foot'>
             <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
             <button type="button" class="btn btn-primary" id='modal_select'>Select</button>
           </div>
-          -->
         </div>
       </div>
     </div>

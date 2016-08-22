@@ -223,7 +223,7 @@ class MakeMKVClient
         
         #   Get Disc Info Button
         _div = @_new_el(t_grid, 'col-sm-1', 'div')
-        refresh_btn = @_new_el(_div, 'btn btn-default disc-info-btn get-info',
+        refresh_btn = @_new_el(_div, 'btn btn-default disc-info-btn get-info hidden',
                                'button', {'data-drive-id':drive, 'type':'button', }
         )
         @_new_el(refresh_btn, 'glyphicon glyphicon-refresh get-info', 'span',
@@ -245,13 +245,13 @@ class MakeMKVClient
         #   Get Disc Info Button
         refresh_btn = @_new_el(
             @_new_el(footer_div, 'col-md-2'),
-            'btn btn-default disc-info-btn get-info', 'button',
+            'btn btn-default disc-info-btn get-info hidden', 'button',
             {'data-drive-id':drive, 'type':'button', html:'Refresh Disc',}
         )
 
         #   Rip Tracks Button
         rip_btn = @_new_el(
-            @_new_el(footer_div, 'col-md-2 col-md-offset-7'),
+            @_new_el(footer_div, 'col-md-2'),
             'btn btn-default disc-info-btn hidden rip-tracks', 'button',
             {'data-drive-id':drive, 'type':'button', html:'Rip Track(s)',}
         )
@@ -296,14 +296,11 @@ class MakeMKVClient
                     added = true
             
             if not added
-                
                 console.log(panel)
                 @_new_el(document.getElementById('main'), 'row').append(panel)
                 
         else
-            
-            panel.parent.removeChild(panel)
-            #   @todo - actually shift the panels
+            panel.parentElement.removeChild(panel)
             
     #   Callback for disc_info cmd
     #       Displays disc info in disc panel
