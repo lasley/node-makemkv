@@ -241,19 +241,19 @@ class MakeMKVClient
         footer = @_new_el(panel, 'panel-footer', 'div')
         
         footer_div = @_new_el(footer, 'row')
-        
-        #   Get Disc Info Button
-        refresh_btn = @_new_el(
-            @_new_el(footer_div, 'col-md-2'),
-            'btn btn-default disc-info-btn get-info hidden', 'button',
-            {'data-drive-id':drive, 'type':'button', html:'Refresh Disc',}
-        )
 
         #   Rip Tracks Button
         rip_btn = @_new_el(
             @_new_el(footer_div, 'col-md-2'),
             'btn btn-default disc-info-btn hidden rip-tracks', 'button',
             {'data-drive-id':drive, 'type':'button', html:'Rip Track(s)',}
+        )
+        
+        #   Get Disc Info Button
+        refresh_btn = @_new_el(
+            @_new_el(footer_div, 'col-md-2'),
+            'btn btn-default disc-info-btn get-info hidden', 'button',
+            {'data-drive-id':drive, 'type':'button', html:'Refresh Disc',}
         )
         
         container
