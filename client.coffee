@@ -308,10 +308,12 @@ class MakeMKVClient
     disc_info: (socket_in) =>
         
         data = socket_in.data
-        console.log(data)
+        console.log('In disc_info')
         
         #   Get Disc panel body and clear it
         if data.disc_id.indexOf('/dev') > -1
+            
+            console.log('Clearing panel body of ' + data.disc_id)
             
             disc_panel = document.getElementById(data.disc_id + '_body')
             
@@ -329,6 +331,8 @@ class MakeMKVClient
         #   Fallback for directory rip panel
         else    
             
+            console.log('Running direction ripping panel')
+            
             is_dir = true
             title = data.dir + ' -- ' + data.disc.Name
             data.disc_id = data.dir
@@ -343,6 +347,8 @@ class MakeMKVClient
             document.getElementById(data.dir).className = 'panel panel-primary disc_'
         
         if data.disc.Name #< Only display the form/table if there's actually a disc
+            
+            console.log('Generate disc panel for ' + data.disc.Name)
             
             #   Form and form container
             form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
