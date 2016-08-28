@@ -309,7 +309,7 @@ class MakeMKVClient
         
         data = socket_in.data
         console.log('In disc_info')
-        debugger
+        debugger;
         
         $disc_panel = $('#' + data.disc_id + '_body')
         
