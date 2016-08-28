@@ -341,18 +341,18 @@ class MakeMKVServer extends MakeMKV
                     'label': device.ID_FS_LABEL or device.ID_FS_LABEL_ENC
                 }})
                 
-                @disc_info(device.DEVNAME, (data) =>
-                    data['disc_id'] = device.DEVNAME
-                    console.log('??? --- ' + data['disc_id'])
-                    @_do_emit(@socket, data)
-                )
-                
                 #@_do_emit(@socket, {'cmd': '_panel_disable', 'data': {
                 #    'disc_id':device.DEVNAME, "busy":true
                 #}})
                 
             else 
                 console.log("Disc ejected " + device.DEVNAME)
+            
+            @disc_info(device.DEVNAME, (data) =>
+                data['disc_id'] = device.DEVNAME
+                console.log('??? --- ' + data['disc_id'])
+                @_do_emit(@socket, data)
+            )
         
     ##  Error handler
     #   @param  str type    Type of error
