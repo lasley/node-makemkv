@@ -299,7 +299,7 @@ class MakeMKVClient
                 console.log($panel)
                 @_new_el(document.getElementById('main'), 'row').append($panel)
             
-        else
+        else if $panel.length
             $panel[0].parentElement.removeChild($panel[0])
         
     #   Callback for disc_info cmd
