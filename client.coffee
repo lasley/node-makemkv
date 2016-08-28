@@ -284,24 +284,24 @@ class MakeMKVClient
         @_panel_shift(panel)
     
     ##  Add or remove a disc panel
-    #   @param  obj     panel   Disc panel
+    #   @param  obj     $panel   Disc panel
     #   @param  bool    add     Add panel, false to remove
-    _panel_shift: (panel, add=true) ->
+    _panel_shift: ($panel, add=true) ->
         
         if add
             
             for row in $('#main>.row')
-                if row.children.length == 1
-                    $(row).append(panel)
+                if row.children().length == 1
+                    $(row).append($panel)
                     added = true
             
             if not added
-                console.log(panel)
-                @_new_el(document.getElementById('main'), 'row').append(panel)
-                
-        else
-            panel.parentElement.removeChild(panel)
+                console.log($panel)
+                @_new_el(document.getElementById('main'), 'row').append($panel)
             
+        else
+            panel.parent().remove('#' + panel.attr('id'))
+
     #   Callback for disc_info cmd
     #       Displays disc info in disc panel
     #   @param  dict    socket_in  Data dict passed from server
@@ -309,25 +309,24 @@ class MakeMKVClient
         
         data = socket_in.data
         console.log('In disc_info')
-        debugger;
+        debugger
+        
+        $disc_panel = $('#' + data.disc_id + '_body')
+        
+        if not $disc_panel
+            @_panel_shift(@new_disc_panel(data.disc_id, title))
+            $disc_panel = $('#' + data.dir + '_body')
         
         #   Get Disc panel body and clear it
-        if data.disc_id.indexOf('/dev') > -1
+        if data.disc_id.indexOf('/dev') !== -1
             
             console.log('Clearing panel body of ' + data.disc_id)
             
-            disc_panel = document.getElementById(data.disc_id + '_body')
-            
-            if not disc_panel
-                @_panel_shift(@new_disc_panel(data.disc_id, title))
-                disc_panel = document.getElementById(data.dir + '_body')
-            
-            document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
-            disc_panel = $(disc_panel)
-            disc_panel.html('')
-            @_panel_disable(disc_panel, false)
+            $('#' + data.disc_id).addClass('panel panel-primary disc_')
+            $disc_panel.html('')
+            @_panel_disable($disc_panel, false)
             title = data.disc_id + ' -- ' + data.disc.Name
-            $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
+            $('#' + data.disc_id + '_title')).find('.title-text').html(title)
         
         #   Fallback for directory rip panel
         else    
@@ -337,22 +336,16 @@ class MakeMKVClient
             is_dir = true
             title = data.dir + ' -- ' + data.disc.Name
             data.disc_id = data.dir
-            disc_panel = document.getElementById(data.dir + '_body')
             
-            if not disc_panel
-                @_panel_shift(@new_disc_panel(data.dir, title))
-                disc_panel = document.getElementById(data.dir + '_body')
-                
-            disc_panel = $(disc_panel)
-            disc_panel.html('')
-            document.getElementById(data.dir).className = 'panel panel-primary disc_'
+            $disc_panel.html('')
+            $('#' + data.dir).addClass('panel panel-primary disc_')
         
         if data.disc.Name #< Only display the form/table if there's actually a disc
             
             console.log('Generate disc panel for ' + data.disc.Name)
             
             #   Form and form container
-            form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
+            form = @_new_el($disc_panel, 'form-horizontal', 'form', {role:'form'})
             form_div = @_new_el(form, 'form-group')
             
             #   Label for input
@@ -368,7 +361,7 @@ class MakeMKVClient
             })
             
             #   Table for all the tracks (and the responsive container for it)
-            tbl_cont = @_new_el(disc_panel, 'table-responsive')
+            tbl_cont = @_new_el($disc_panel, 'table-responsive')
             table = @_new_el(tbl_cont, 'table table-bordered table-condensed table-hover', 'table')
             
             #   Disc info header map and loop
