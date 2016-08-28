@@ -297,8 +297,7 @@ class MakeMKVClient
             
             if not added
                 console.log($panel)
-                debugger;
-                @_new_el(document.getElementById('main'), 'row').append($panel)
+                $('#main').append('<row>').append($panel)
             
         else if $panel.length
             $panel[0].parentElement.removeChild($panel[0])
