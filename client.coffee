@@ -300,7 +300,7 @@ class MakeMKVClient
                 @_new_el(document.getElementById('main'), 'row').append($panel)
             
         else
-            panel.parent().remove('#' + panel.attr('id'))
+            $panel[0].parentElement.removeChild($panel[0])
         
     #   Callback for disc_info cmd
     #       Displays disc info in disc panel
@@ -311,22 +311,22 @@ class MakeMKVClient
         console.log('In disc_info')
         debugger;
         
-        $disc_panel = $('#' + data.disc_id + '_body')
+        $disc_panel = $(document.getElementById(data.disc_id + '_body'))
         
         if not $disc_panel
             @_panel_shift(@new_disc_panel(data.disc_id, title))
-            $disc_panel = $('#' + data.dir + '_body')
+            $disc_panel = $(document.getElementById(data.dir + '_body'))
         
         #   Get Disc panel body and clear it
         if data.disc_id.indexOf('/dev') != -1
             
             console.log('Clearing panel body of ' + data.disc_id)
             
-            $('#' + data.disc_id).addClass('panel panel-primary disc_')
+            $(document.getElementById(data.disc_id)).addClass('panel panel-primary disc_')
             $disc_panel.html('')
             @_panel_disable($disc_panel, false)
             title = data.disc_id + ' -- ' + data.disc.Name
-            $('#' + data.disc_id + '_title').find('.title-text').html(title)
+            $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
         
         #   Fallback for directory rip panel
         else    
@@ -338,7 +338,7 @@ class MakeMKVClient
             data.disc_id = data.dir
             
             $disc_panel.html('')
-            $('#' + data.dir).addClass('panel panel-primary disc_')
+            $(document.getElementById(data.dir)).addClass('panel panel-primary disc_')
         
         if data.disc.Name #< Only display the form/table if there's actually a disc
             
