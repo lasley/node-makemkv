@@ -178,29 +178,29 @@ class MakeMKVClient
         @socket.emit(cmd, data)
     
     #   Create a new el
-    #   @param  obj parent  perform parent.appendChild(this)
+    #   @param  obj parent  perform parent.append(this)
     #   @param  str class_  Class of el
     #   @param  str type_   Type of element to create
     #   @param  obj kwargs  Dict of attrs to set
     #   @return obj 
     _new_el: (parent=false, class_=false, type_='div', kwargs={}) ->
         
-        $el = $(document.createElement(type_))
+        $el = $('<' + type_ + '>')
         
         if class_
             $el.addClass(class_)
-            
+        
+        for attr of kwargs
+            switch(attr)
+                when 'html' then $el.html(kwargs[attr])
+                else $el.attr(attr, kwargs[attr])
+        
         if parent
             #   Handle both jQuery and non
             if parent.append 
                 parent.append($el)
             else
                 $(parent).append($el)
-        
-        for attr of kwargs
-            switch(attr)
-                when 'html' then $el.html(kwargs[attr])
-                else $el.attr(attr, kwargs[attr])
         
         $el
     
