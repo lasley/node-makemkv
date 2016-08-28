@@ -185,24 +185,24 @@ class MakeMKVClient
     #   @return obj 
     _new_el: (parent=false, class_=false, type_='div', kwargs={}) ->
         
-        el = $(document.createElement(type_))
+        $el = $(document.createElement(type_))
         
         if class_
-            el.addClass(class_)
+            $el.addClass(class_)
             
         if parent
             #   Handle both jQuery and non
             if parent.append 
-                parent.append(el)
+                parent.append($el)
             else
-                $(parent).append(el)
+                $(parent).append($el)
         
         for attr of kwargs
             switch(attr)
-                when 'html' then el.html(kwargs[attr])
-                else el.attr(attr, kwargs[attr])
+                when 'html' then $el.html(kwargs[attr])
+                else $el.attr(attr, kwargs[attr])
         
-        el
+        $el
     
     #   Create a new disc panel on UI
     #   @param  str drive       Drive ID, or dir
@@ -297,6 +297,7 @@ class MakeMKVClient
             
             if not added
                 console.log($panel)
+                debugger;
                 @_new_el(document.getElementById('main'), 'row').append($panel)
             
         else if $panel.length
@@ -309,7 +310,6 @@ class MakeMKVClient
         
         data = socket_in.data
         console.log('In disc_info')
-        debugger;
         
         $disc_panel = $(document.getElementById(data.disc_id + '_body'))
         
