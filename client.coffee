@@ -313,7 +313,7 @@ class MakeMKVClient
         
         $disc_panel = $(document.getElementById(data.disc_id + '_body'))
         
-        if not $disc_panel
+        if not $disc_panel.length
             @_panel_shift(@new_disc_panel(data.disc_id, title))
             $disc_panel = $(document.getElementById(data.dir + '_body'))
         
@@ -415,15 +415,15 @@ class MakeMKVClient
                         
             table.tablesorter()
                         
-            panel = $(document.getElementById(data['disc_id']))
+            $panel = $(document.getElementById(data['disc_id']))
     
             if is_dir
-                panel.find('.get-info').addClass('hidden')
+                $panel.find('.get-info').addClass('hidden')
             else
-                @_panel_disable(panel, false)
+                @_panel_disable($panel, false)
             
             #   Un-hide Rip Button
-            panel.find('.rip-tracks').removeClass('hidden')
+            $panel.find('.rip-tracks').removeClass('hidden')
         
     #   Receive track rip status, output to GUI
     #   @param  dict    socket_in    Data dict passed from server
