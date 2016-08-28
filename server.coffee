@@ -350,7 +350,7 @@ class MakeMKVServer extends MakeMKV
             
             @disc_info(device.DEVNAME, (data) =>
                 data['disc_id'] = device.DEVNAME
-                console.log('??? --- ' + data['disc_id'])
+                console.log(device.DEVNAME + ' --- ' + data['disc_id'])
                 @_do_emit(@socket, data)
             )
         

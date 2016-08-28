@@ -309,6 +309,7 @@ class MakeMKVClient
         
         data = socket_in.data
         console.log('In disc_info')
+        debugger;
         
         #   Get Disc panel body and clear it
         if data.disc_id.indexOf('/dev') > -1
