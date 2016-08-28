@@ -301,7 +301,7 @@ class MakeMKVClient
             
         else
             panel.parent().remove('#' + panel.attr('id'))
-
+        
     #   Callback for disc_info cmd
     #       Displays disc info in disc panel
     #   @param  dict    socket_in  Data dict passed from server
@@ -318,7 +318,7 @@ class MakeMKVClient
             $disc_panel = $('#' + data.dir + '_body')
         
         #   Get Disc panel body and clear it
-        if data.disc_id.indexOf('/dev') !== -1
+        if data.disc_id.indexOf('/dev') != -1
             
             console.log('Clearing panel body of ' + data.disc_id)
             
@@ -326,7 +326,7 @@ class MakeMKVClient
             $disc_panel.html('')
             @_panel_disable($disc_panel, false)
             title = data.disc_id + ' -- ' + data.disc.Name
-            $('#' + data.disc_id + '_title')).find('.title-text').html(title)
+            $('#' + data.disc_id + '_title').find('.title-text').html(title)
         
         #   Fallback for directory rip panel
         else    
