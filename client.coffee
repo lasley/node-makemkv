@@ -290,19 +290,18 @@ class MakeMKVClient
         
         if add
             
-            for row in $('#main>row')
-                $row = $(row)
-                if $row.children().length == 1
-                    $row.append($panel)
-                    added = true
+            $mainRow = $('#main>row')
+            if $mainRow.length
+                $mainRow.append($panel)
+                added = true
             
             if not added
                 console.log('_panel_shift not added, append')
                 console.log($panel)
                 $('#main').append($('<row>').append($panel))
             
-        else if $panel.length
-            $panel[0].parentElement.removeChild($panel[0])
+        else
+            $panel.remove()
         
     #   Callback for disc_info cmd
     #       Displays disc info in disc panel
