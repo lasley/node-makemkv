@@ -419,10 +419,10 @@ class MakeMKVClient
                         
             $panel = $('#' + data['disc_id'])
     
-            if is_dir
-                $panel.find('.get-info').addClass('hidden')
-            else
-                @_panel_disable($panel, false)
+            #if is_dir
+            #    $panel.find('.get-info').addClass('hidden')
+            #else
+            @_panel_disable($panel, false)
             
             #   Un-hide Rip Button
             $panel.find('.rip-tracks').removeClass('hidden')
