@@ -192,7 +192,7 @@ class MakeMKVServer extends MakeMKV
             data = data['data'] #< Pull and save it instead
         
         if data['disc_id']
-            data['disc_id'].replace('/', '_')
+            data['disc_id'] = data['disc_id'].replace('/', '_')
             namespace= data['disc_id']
         else
             namespace = 'none'
