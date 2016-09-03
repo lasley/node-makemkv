@@ -290,7 +290,7 @@ class MakeMKVClient
         
         if add
             
-            for row in $('#main>.row')
+            for row in $('#main>row')
                 $row = $(row)
                 if $row.children().length == 1
                     $row.append($panel)
@@ -299,7 +299,7 @@ class MakeMKVClient
             if not added
                 console.log('_panel_shift not added, append')
                 console.log($panel)
-                $('#main').append('<row>').append($panel)
+                $('#main').append($('<row>').append($panel))
             
         else if $panel.length
             $panel[0].parentElement.removeChild($panel[0])
@@ -312,11 +312,11 @@ class MakeMKVClient
         data = socket_in.data
         console.log('In disc_info')
         
-        $disc_panel = $(document.getElementById(data.disc_id + '_body'))
+        $disc_panel = $(data.disc_id + '_body')
         
         if not $disc_panel.length
             @_panel_shift(@new_disc_panel(data.disc_id, title))
-            $disc_panel = $(document.getElementById(data.disc_id + '_body'))
+            $disc_panel = $(data.disc_id + '_body')
         
         #   Get Disc panel body and clear it
         if data.disc_id.indexOf('/dev') != -1
