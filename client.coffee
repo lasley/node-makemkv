@@ -293,9 +293,8 @@ class MakeMKVClient
             $mainRow = $('#main>row')
             if $mainRow.length
                 $mainRow.append($panel)
-                added = true
             
-            if not added
+            else
                 console.log('_panel_shift not added, append')
                 console.log($panel)
                 $('#main').append($('<row>').append($panel))
@@ -318,7 +317,7 @@ class MakeMKVClient
             $disc_panel = $(data.disc_id + '_body')
         
         #   Get Disc panel body and clear it
-        if data.disc_id.indexOf('/dev') != -1
+        if data.disc_id.indexOf('_dev_') != -1
             
             console.log('Clearing panel body of ' + data.disc_id)
             
