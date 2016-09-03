@@ -125,7 +125,7 @@ class MakeMKVServer extends MakeMKV
             
             #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
-                data = data.replace('_', '/')
+                data = data.split('_').join('/')
                 console.log('getting disc info for', data)
                 @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data, "busy":true}})
                 @disc_info(data, single_broadcast)
@@ -133,7 +133,7 @@ class MakeMKVServer extends MakeMKV
             
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
-                data.drive_id = data.drive_id.replace('_', '/')
+                data.drive_id = data.drive_id.split('_').join('/')
                 console.log('getting disc info for', data)
                 @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data.drive_id, "busy":true}})
                 @rip_track(data.save_dir, data.drive_id, data.track_ids, single_broadcast)
@@ -192,7 +192,7 @@ class MakeMKVServer extends MakeMKV
             data = data['data'] #< Pull and save it instead
         
         if data['disc_id']
-            data['disc_id'] = data['disc_id'].replace('/', '_')
+            data['disc_id'] = data['disc_id'].split('/').join('_')
             namespace= data['disc_id']
         else
             namespace = 'none'
