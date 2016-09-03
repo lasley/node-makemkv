@@ -310,6 +310,9 @@ class MakeMKVClient
         data = socket_in.data
         console.log('In disc_info')
         
+        
+        debugger
+        
         $disc_panel = $(data.disc_id + '_body')
         
         if not $disc_panel.length
@@ -321,23 +324,23 @@ class MakeMKVClient
             
             console.log('Clearing panel body of ' + data.disc_id)
             
-            $(document.getElementById(data.disc_id)).addClass('panel panel-primary disc_')
+            $(data.disc_id).addClass('panel panel-primary disc_')
             $disc_panel.html('')
             @_panel_disable($disc_panel, false)
             title = data.disc_id + ' -- ' + data.disc.Name
-            $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
+            $(data.disc_id + '_title').html(title)
         
         #   Fallback for directory rip panel
-        else    
-            
-            console.log('DEPRECATED - Running directory ripping panel')
-            
-            is_dir = true
-            title = data.dir + ' -- ' + data.disc.Name
-            data.disc_id = data.dir
-            
-            $disc_panel.html('')
-            $(document.getElementById(data.dir)).addClass('panel panel-primary disc_')
+        #else    
+        #    
+        #    console.log('DEPRECATED - Running directory ripping panel')
+        #    
+        #    is_dir = true
+        #    title = data.dir + ' -- ' + data.disc.Name
+        #    data.disc_id = data.dir
+        #    
+        #    $disc_panel.html('')
+        #    $(document.getElementById(data.dir)).addClass('panel panel-primary disc_')
         
         if data.disc.Name #< Only display the form/table if there's actually a disc
             
