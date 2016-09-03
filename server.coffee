@@ -125,6 +125,7 @@ class MakeMKVServer extends MakeMKV
             
             #   User has sent command to retrieve single disc info
             client.on('disc_info', (data) =>
+                data = data.replace('_', '/')
                 console.log('getting disc info for', data)
                 @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data, "busy":true}})
                 @disc_info(data, single_broadcast)
@@ -132,6 +133,7 @@ class MakeMKVServer extends MakeMKV
             
             #   User has sent command to retrieve single disc info
             client.on('rip_track', (data) =>
+                data.drive_id = data.drive_id.replace('_', '/')
                 console.log('getting disc info for', data)
                 @_do_emit(@socket, {'cmd':'_panel_disable', 'data':{'disc_id':data.drive_id, "busy":true}})
                 @rip_track(data.save_dir, data.drive_id, data.track_ids, single_broadcast)
@@ -188,8 +190,13 @@ class MakeMKVServer extends MakeMKV
         
         if data['data'] #< If there's a second data dimension (cached)
             data = data['data'] #< Pull and save it instead
-            
-        namespace = if data['disc_id'] then data['disc_id'] else 'none'
+        
+        if data['disc_id']
+            data['disc_id'].replace('/', '_')
+            namespace= data['disc_id']
+        else
+            namespace = 'none'
+        
         data = @cache_data(cmd, data, namespace)
         socket.sockets.emit(cmd, data)    
 
