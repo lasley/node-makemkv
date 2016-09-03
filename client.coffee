@@ -313,22 +313,22 @@ class MakeMKVClient
         
         debugger
         
-        $disc_panel = $(data.disc_id + '_body')
+        $disc_panel = $('#' + data.disc_id + '_body')
         
         if not $disc_panel.length
             @_panel_shift(@new_disc_panel(data.disc_id, title))
             $disc_panel = $(data.disc_id + '_body')
         
         #   Get Disc panel body and clear it
-        if data.disc_id.indexOf('_dev_') != -1
+        else if data.disc_id.indexOf('_dev_') != -1
             
             console.log('Clearing panel body of ' + data.disc_id)
             
-            $(data.disc_id).addClass('panel panel-primary disc_')
+            $('#' + data.disc_id).addClass('panel panel-primary disc_')
             $disc_panel.html('')
             @_panel_disable($disc_panel, false)
             title = data.disc_id + ' -- ' + data.disc.Name
-            $(data.disc_id + '_title').html(title)
+            $('#' + data.disc_id + '_title').html(title)
         
         #   Fallback for directory rip panel
         #else    
@@ -417,7 +417,7 @@ class MakeMKVClient
                         
             table.tablesorter()
                         
-            $panel = $(document.getElementById(data['disc_id']))
+            $panel = $('#' + data['disc_id'])
     
             if is_dir
                 $panel.find('.get-info').addClass('hidden')
