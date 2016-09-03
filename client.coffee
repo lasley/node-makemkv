@@ -182,7 +182,7 @@ class MakeMKVClient
     #   @param  str class_  Class of el
     #   @param  str type_   Type of element to create
     #   @param  obj kwargs  Dict of attrs to set
-    #   @return obj 
+    #   @return obj Jquery Obj
     _new_el: (parent=false, class_=false, type_='div', kwargs={}) ->
         
         $el = $('<' + type_ + '>')
@@ -291,11 +291,13 @@ class MakeMKVClient
         if add
             
             for row in $('#main>.row')
-                if row.children().length == 1
-                    $(row).append($panel)
+                $row = $(row)
+                if $row.children().length == 1
+                    $row.append($panel)
                     added = true
             
             if not added
+                console.log('_panel_shift not added, append')
                 console.log($panel)
                 $('#main').append('<row>').append($panel)
             
@@ -314,7 +316,7 @@ class MakeMKVClient
         
         if not $disc_panel.length
             @_panel_shift(@new_disc_panel(data.disc_id, title))
-            $disc_panel = $(document.getElementById(data.dir + '_body'))
+            $disc_panel = $(document.getElementById(data.disc_id + '_body'))
         
         #   Get Disc panel body and clear it
         if data.disc_id.indexOf('/dev') != -1
@@ -330,7 +332,7 @@ class MakeMKVClient
         #   Fallback for directory rip panel
         else    
             
-            console.log('Running direction ripping panel')
+            console.log('DEPRECATED - Running directory ripping panel')
             
             is_dir = true
             title = data.dir + ' -- ' + data.disc.Name

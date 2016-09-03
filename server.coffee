@@ -290,7 +290,7 @@ class MakeMKVServer extends MakeMKV
         )
         
             
-        ##  Scan drives, return info. Also sets @drive_map
+    ##  Scan drives, return info. Also sets @drive_map
     #   @param  func    callback Callback function, will receive drives as param
     #   @return dict    drives  Dict keyed by drive index, value is movie name
     scan_drives: (callback=false) =>
