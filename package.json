@@ -4,28 +4,28 @@
   "description": "Node MakeMKV",
   "main": "index.js",
   "dependencies": {
-    "ini": "^1.1.0",
-    "socket.io": "^0.9.16",
-    "xml2js": "^0.4.2",
-    "udev": "^0.1.0"
+    "ini": ">=1.3.4",
+    "socket.io": ">=2.0.3",
+    "xml2js": ">=0.4.17",
+    "udev": ">=0.4.0"
   },
   "devDependencies": {
-    "coffee-script": "^1.7.1"
+    "coffee-script": ">=1.12.6"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dlasley/node-makemkv"
+    "url": "https://github.com/lasley/node-makemkv"
   },
   "keywords": [
     "makemkv"
   ],
-  "author": "Dave Lasley <dave@dlasley.net> (https://blog.dlasley.net/)",
+  "author": "Dave Lasley <dave@dlasley.net>",
   "license": "GPLv3",
   "bugs": {
-    "url": "https://github.com/dlasley/node-makemkv/issues"
+    "url": "https://github.com/lasley/node-makemkv/issues"
   },
-  "homepage": "https://github.com/dlasley/node-makemkv"
+  "homepage": "https://github.com/lasley/node-makemkv"
 }

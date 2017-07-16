@@ -80,11 +80,25 @@ class MakeMKVServer extends MakeMKV
                         when '/list_dir' #< List dir
                             res.writeHead(200, {'Content-Type': 'application/javascript'})
                             @list_dir(parsed_url.query['id'], (dir)=>res.end(JSON.stringify(dir)))
+
+                        else
+
+                            if /\/refresh\//.test(path_)
+
+                                device = path_.replace('/refresh', '')
+
+                                @disc_info(device, (data) =>
+                                    data['disc_id'] = device
+                                    console.log('??? --- ' + data['disc_id'])
+                                    @_do_emit(@socket, data)
+                                )
+                                res.writeHead(200, {'Content-Type': 'application/javascript'})
+                                res.end()
                         
         ).listen(@LISTEN_PORT)
-        
-        
-        @socket = io.listen(server,)# {log: false})
+
+        @socket = io(server)
+
         console.log('Listening on ' + @LISTEN_PORT)
         
         monitor = udev.monitor()
@@ -290,7 +304,7 @@ class MakeMKVServer extends MakeMKV
         )
         
             
-        ##  Scan drives, return info. Also sets @drive_map
+    ##  Scan drives, return info. Also sets @drive_map
     #   @param  func    callback Callback function, will receive drives as param
     #   @return dict    drives  Dict keyed by drive index, value is movie name
     scan_drives: (callback=false) =>

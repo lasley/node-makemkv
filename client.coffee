@@ -28,28 +28,25 @@ class MakeMKVClient
             if not @socket
                 @socket = io.connect(window.location.host)
                 
-                if @connected
+                if @socket and @socket.connected
                     $(document.getElementById('modal')).modal('hide')
                 else
                     dc_err()
                     @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
             else
-                @socket.socket.connect()
-                if @connected
+                @socket.connect()
+                if @socket.connected
                     $(document.getElementById('modal')).modal('hide')
                 else
                     dc_err()
                     @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
-                
         
-        @connected = false
         init_socket()
-        
+
         @socket.on('connect', () =>
-            @connected = true
             console.log('Connected to server')
         )
-        
+
         #   Bind to receive/process socket cmds
         @socket.on('change_out_dir', (data) => @change_out_dir(data))
         @socket.on('scan_drives', (data) => @scan_drives(data))
@@ -61,23 +58,22 @@ class MakeMKVClient
         @socket.on('list_dir', (data) => @list_dir(data))
         @socket.on('_panel_disable', (data) => @panel_disable_socket(data))
         @socket.on('_error', (data) => @_error(data.data.type, data.data.msg))
-        
+
         @socket.on('disconnect', () =>
-            @connected = false
             dc_err()
             document.getElementById('main').innerHTML = ''
             @socket_timeout = setTimeout(init_socket, @RECONNECT_MS)
             console.log('Server D/C')
         )
-        
+
         #   Socket debugging
         @socket.on('message', (data) =>
             console.log('Client sent: ', data)
         )
-        
+
         if bind
             @_bind()
-    
+
     #   Bind client events
     _bind: () =>
         
@@ -185,24 +181,24 @@ class MakeMKVClient
     #   @return obj 
     _new_el: (parent=false, class_=false, type_='div', kwargs={}) ->
         
-        el = $(document.createElement(type_))
+        $el = $('<' + type_ + '>')
         
         if class_
-            el.addClass(class_)
+            $el.addClass(class_)
             
         if parent
             #   Handle both jQuery and non
-            if parent.append 
-                parent.append(el)
+            if parent.appendChild
+                $(parent).append($el)
             else
-                $(parent).append(el)
+                parent.append($el)
         
         for attr of kwargs
             switch(attr)
-                when 'html' then el.html(kwargs[attr])
-                else el.attr(attr, kwargs[attr])
+                when 'html' then $el.html(kwargs[attr])
+                else $el.attr(attr, kwargs[attr])
         
-        el
+        $el
     
     #   Create a new disc panel on UI
     #   @param  str drive       Drive ID, or dir
@@ -250,7 +246,7 @@ class MakeMKVClient
         )
 
         #   Rip Tracks Button
-        rip_btn = @_new_el(
+        @_new_el(
             @_new_el(footer_div, 'col-md-2 col-md-offset-7'),
             'btn btn-default disc-info-btn hidden rip-tracks', 'button',
             {'data-drive-id':drive, 'type':'button', html:'Rip Track(s)',}
@@ -264,7 +260,6 @@ class MakeMKVClient
     scan_drives: (socket_in) =>
         
         data = socket_in['data']
-        main_div = document.getElementById('main')
 
         for drive, disc of data
             @scanned_drive(drive, disc)
@@ -289,7 +284,7 @@ class MakeMKVClient
     _panel_shift: (panel, add=true) ->
         
         if add
-            
+
             for row in $('#main>.row')
                 if row.children.length == 1
                     $(row).append(panel)
@@ -298,7 +293,7 @@ class MakeMKVClient
             if not added
                 
                 console.log(panel)
-                @_new_el(document.getElementById('main'), 'row').append(panel)
+                @_new_el($('#main'), 'row').append(panel)
                 
         else
             
@@ -312,7 +307,7 @@ class MakeMKVClient
         
         data = socket_in.data
         console.log(data)
-        
+
         #   Get Disc panel body and clear it
         if data.disc_id.indexOf('/dev') > -1
             
@@ -320,32 +315,32 @@ class MakeMKVClient
             
             if not disc_panel
                 @_panel_shift(@new_disc_panel(data.disc_id, title))
-                disc_panel = document.getElementById(data.dir + '_body')
+                disc_panel = document.getElementById(data.disc_id + '_body')
             
             document.getElementById(data.disc_id).className = 'panel panel-primary disc_'
             disc_panel = $(disc_panel)
             disc_panel.html('')
             @_panel_disable(disc_panel, false)
-            title = data.disc_id + ' -- ' + data.disc.Name
+            title = data.disc_id + ' -- ' + data.disc.name
             $(document.getElementById(data.disc_id + '_title')).find('.title-text').html(title)
         
         #   Fallback for directory rip panel
         else    
             
             is_dir = true
-            title = data.dir + ' -- ' + data.disc.Name
+            title = data.dir + ' -- ' + data.disc.name
             data.disc_id = data.dir
             disc_panel = document.getElementById(data.dir + '_body')
             
             if not disc_panel
                 @_panel_shift(@new_disc_panel(data.dir, title))
                 disc_panel = document.getElementById(data.dir + '_body')
-                
+
             disc_panel = $(disc_panel)
             disc_panel.html('')
             document.getElementById(data.dir).className = 'panel panel-primary disc_'
         
-        if data.disc.Name #< Only display the form/table if there's actually a disc
+        if data.disc.name #< Only display the form/table if there's actually a disc
             
             #   Form and form container
             form = @_new_el(disc_panel, 'form-horizontal', 'form', {role:'form'})
@@ -415,7 +410,7 @@ class MakeMKVClient
                     if header
                         col_data = track_data[header]
                         @_new_el(row, false, 'td', {html:col_data})
-                        
+
             table.tablesorter()
                         
             panel = $(document.getElementById(data['disc_id']))
