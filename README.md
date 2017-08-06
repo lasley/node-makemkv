@@ -6,6 +6,10 @@
 
 ## Installation [∞](#installation "Link to this section")
 
+Note: This project has been Dockerized, which allows for easier setup. Check out the project
+on [GitHub](https://github.com/lasley/docker-node-makemkv), or get the container on [DockerHub](
+https://hub.docker.com/r/lasley/node-makemkv/).
+
 *   [Install Node.js and CoffeeScript](https://blog.dlasley.net/2014/04/installing-node-js-and-coffeescript/)
 *   Install libudev-dev (to monitor disc drives for changes)
 *   Install NodeMakemkv - `npm install node-makemkv/`
