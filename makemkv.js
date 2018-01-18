@@ -1,6 +1,7 @@
 /* Interact with MakeMKV CLI */
 
 const fs = require('fs'),
+    os = require('os'),
     EventEmitter = require('events').EventEmitter,
     parseCsv = require('csv-parse/lib/sync'),
     path = require('path'),
@@ -10,11 +11,11 @@ const fs = require('fs'),
 
 const ALL_DRIVES = constants.ALL_DRIVES,
     DRIVE_STATE_FLAG = constants.DRIVE_STATE_FLAG,
-    NEWLINE_CHAR = constants.NEWLINE_CHAR,
     TRACK_ATTRIBUTES = constants.TRACK_ATTRIBUTES;
 
 const CONVERSION_PROFILE = settings.CONVERSION_PROFILE,
     MAKEMKVCON_PATH = settings.MAKEMKVCON_PATH,
+    CACHE_SIZE = settings.CACHE_SIZE,
     OUTLIER_MODIFIER = settings.OUTLIER_MODIFIER,
     SELECTION_PROFILE = settings.SELECTION_PROFILE,
     SERVER_PORT = settings.SERVER_PORT,
@@ -153,30 +154,27 @@ class MakeMkv {
 
             this.busyDevices.delete(ALL_DRIVES);
 
-            if (exitCode) {
-                // @TODO: handle errors.
-            }
-
             let discData = {},
-                parsedOutput = parseCsv(stdOut);
+                parsedOutput = parseCsv(
+                    stdOut.join(os.EOL),
+                    {relax_column_count: true}
+                );
 
             parsedOutput.map((dataRow) => {
 
                 dataRow = this._parseOutputRow(dataRow);
 
-                if (dataRow.attributeType !== this.ATTRIBUTE_TYPE_DRIVE_INFO) {
+                if (
+                    !dataRow
+                    || dataRow.attributeType !== this.ATTRIBUTE_TYPE_DRIVE_INFO
+                    || !dataRow.driveId
+                ) {
                     return;
                 }
-                if (!dataRow.driveId) {
-                    return;
-                }
-
-                // Maintain an index => drive mapping.
-                // @TODO: Is this even used? Feels very legacy to me...
-                this.driveMap[dataRow.driveIndex] = dataRow.driveId;
 
                 // Assign the flags to string representations
                 dataRow.driveState = DRIVE_STATE_FLAG[dataRow.driveState];
+
                 // @TODO: Bitwise determination of the disc filesystem flags.
 
                 // Add the processed row into the data.
@@ -188,7 +186,7 @@ class MakeMkv {
 
         };
 
-        this._spawnMakemkv(ALL_DRIVES, ['info'], newCallback);
+        this._spawnMakemkv(ALL_DRIVES, ['info', 'disc:9999'], newCallback);
 
     }
 
@@ -217,6 +215,7 @@ class MakeMkv {
 
         if (!this.ripQueue.driveId.length) {
             // @TODO: What to do here?
+            return;
         }
 
         let newCallback = (trackId, ripSuccess, messages) => {
@@ -245,7 +244,7 @@ class MakeMkv {
 
         saveDirectory = path.join(OUTPUT_DIR, saveDirectory);
         let command = [
-            '--noscan', 'mkv', '--cache=256',
+            '--noscan', 'mkv', `--cache=${CACHE_SIZE}`,
             `--profile=${CONVERSION_PROFILE}`,
             `dev:${driveId}`, trackId, saveDirectory,
         ];
@@ -263,6 +262,9 @@ class MakeMkv {
 
     // Return a camelCase version of a Human String.
     _camelize(humanString) {
+        if(!humanString) {
+            return '';
+        }
         return humanString.replace(
             /(?:^\w|[A-Z]|\b\w)/g, (letter, index) => {
                 return index == 0 ? letter.toLowerCase() : letter.toUpperCase();
@@ -275,18 +277,18 @@ class MakeMkv {
         The output lines appear in a certain order::
 
             TCOUNT (track count)
-            CINFO (Disc level information)
+            CINFO (Disc information)
             ...
-            TINFO (Track level information)
+            TINFO (Track 0 information)
             ...
-            SINFO (Stream level information)
+            SINFO (Track 0, Stream 0 information)
             ...
-            TINFO (Next track level information
+            SINFO (Track 0, Stream 1 information)
             ...
-            SINFO (Next stream level information)
+            TINFO (Track 1 information)
             ...
-            ...
-            ...
+            SINFO (Track 1, Stream 0 information)
+            ... repeating ...
 
         @param  {int}   exitCode    MakeMKV exit code
         @param  {array} stdErr  Array of lines representing the error stream.
@@ -301,11 +303,12 @@ class MakeMkv {
      */
     _parseDiscInfo(exitCode, stdErr, stdOut, callback) {
 
-        stdOut.unshift(this.HEADERS_DISC_INFO.join(','));
-
         let discInfo = {tracks:[]},
-            parsedOutput = parseCsv(stdOut),
-            attributeName = undefined;
+            attributeName = false,
+            parsedOutput = parseCsv(
+                stdOut.join(os.EOL),
+                {relax_column_count: true}
+            );
 
         parsedOutput.map((dataRow) => {
 
@@ -314,7 +317,7 @@ class MakeMkv {
             switch(dataRow.attributeType) {
 
                 case this.ATTRIBUTE_TYPE_DISC_INFO:
-                    attributeName = this._getAttribute(dataRow.code);
+                    attributeName = this._getAttribute(dataRow.attributeId);
                     discInfo[attributeName] = dataRow.attributeValue;
                     break;
 
@@ -323,7 +326,7 @@ class MakeMkv {
                     discInfo.tracks[dataRow.trackIndex] = this._injectValue(
                         discInfo.tracks[dataRow.trackIndex],
                         attributeName,
-                        this.attributeValue
+                        dataRow.attributeValue
                     );
                     break;
 
@@ -341,7 +344,7 @@ class MakeMkv {
                     trackInfo.streams[dataRow.streamIndex] = this._injectValue(
                         trackInfo.streams[dataRow.streamIndex],
                         attributeName,
-                        this.attributeValue
+                        dataRow.attributeValue
                     );
                     break;
 
@@ -349,7 +352,9 @@ class MakeMkv {
 
         });
 
-        callback(discInfo);
+        console.log('Parsed disc info.');
+        console.debug(discInfo);
+        callback(stdErr, discInfo);
 
     }
 
@@ -379,10 +384,12 @@ class MakeMkv {
 
         let [attrType, attrFlag] = dataRow[0].split(':');
 
+        // Zip the keys and values into an obj and add the attribute type.
         let parseData = (keys) => {
             dataRow[0] = attrFlag;
-            let data = keys.map((key, idx) => [key, dataRow[idx]]);
-            data.attributeType = attrType;
+            let data = {attributeType: attrType};
+            keys.forEach((key, idx) => data[key] = dataRow[idx]);
+            return data;
         };
 
         switch(attrType) {
@@ -405,10 +412,24 @@ class MakeMkv {
             case this.ATTRIBUTE_TYPE_STREAM_INFO:
                 return parseData(this.HEADERS_DISC_INFO_STREAM);
 
+            default:
+                return false;
+
         }
 
     }
 
+    /*  Spawn MakeMKV with args and send the streams to a callback when done.
+
+        @param  {str}   driveId The Identifier of the drive that is being
+            accessed. This is used to ensure that two processes do not access
+            the same drive at the same time, which makes the drive create
+            funny clicky noises so it's probably not good.
+        @param  {list}  args    List of string arguments to pass to the binary.
+        @param  {function}  callback    The method to call when done. It will
+            receive the exit code as the first argument, stdErr as the second
+            argument, and stdOut as the third. ``(exitCode, stdErr, stdOut)``
+     */
     _spawnMakemkv(driveId, args, callback) {
         let command = ['-r'],
             newCallback = (...args) => {
@@ -431,7 +452,7 @@ class MakeMkv {
      */
     _spawn(args, binaryPath, callback) {
 
-        console.log(`Spawning ${binaryPath} with args ${args}`);
+        console.log(`Spawning "${binaryPath}" with args: "${args}"`);
 
         let process = spawn(binaryPath, args);
 
@@ -446,12 +467,15 @@ class MakeMkv {
         process.stderr.setEncoding('utf-8');
 
         process.stdout.on(
-            'data', (data) => stdOut.push.apply(data.split(NEWLINE_CHAR))
+            'data', (data) => { stdOut.push(...data.split(os.EOL)) }
         );
         process.stderr.on(
-            'data', (data) => stdErr.push.apply(data.split(NEWLINE_CHAR))
+            'data', (data) => { stdErr.push(...data.split(os.EOL)) }
         );
-        process.on('exit', (code) => callback(code, stdErr, stdOut));
+        process.on('exit', (code) => {
+            console.debug(`MakeMKV exited with code ${code}.`);
+            callback(code, stdErr, stdOut);
+        });
 
     }
 
@@ -479,6 +503,7 @@ class MakeMkv {
                 return this._waitAvailable(driveId, callback, ...args);
             }
         };
+        console.debug(`Waiting for ${driveId} to become available.`);
         setTimeout(timer, 1000);
     }
 

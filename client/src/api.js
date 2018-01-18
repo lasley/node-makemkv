@@ -1,28 +1,47 @@
-import openSocket from 'socket.io-client';
+import io from 'socket.io-client';
 
 import {
     SERVER_PORT,
 } from './settings.json';
 
-const socket = openSocket(`http://localhost:${SERVER_PORT}`);
+const socket = io();
 
-function subscribeTo(eventName, callback, sendData) {
-    socket.on(eventName, receiveData => callback(receiveData));
-    socket.emit(`subscribeTo${eventName}`, sendData);
+function waitForSocket(callback, ...args) {
+    console.debug('Waiting for socket to become available.');
+    if (socket.id) {
+        console.debug('Socket is available.');
+        callback(...args);
+    } else {
+        setTimeout(waitForSocket, 1000, callback, ...args);
+    }
+}
+
+function subscribeTo(eventName, callback, context, sendData) {
+    console.debug(`Subscribing to "${eventName}".`);
+    waitForSocket(() => {
+        socket.on(
+            eventName,
+            context ? callback.bind(context) : callback
+        );
+        socket.emit(`subscribeTo${eventName}`, sendData);
+    });
 }
 
 function doAction(actionName, sendData) {
-    socket.emit(`do${actionName}`, sendData);
+    console.debug(`Performing action "${actionName}".`);
+    waitForSocket(() => {
+        socket.emit(`do${actionName}`, sendData);
+    });
 }
 
 // Listen for updates to disc-level information on a drive.
-function subscribeToDiscInfo(callback, driveId) {
-    subscribeTo('DiscInfo', callback, { driveId });
+function subscribeToDiscInfo(callback, context, driveId) {
+    subscribeTo('DiscInfo', callback, context, { driveId });
 }
 
 // Listen for updates to any drive-level information.
-function subscribeToDriveInfo(callback) {
-    subscribeTo('DriveInfo', callback);
+function subscribeToDriveInfo(callback, context) {
+    subscribeTo('DriveInfo', callback, context);
 }
 
 // Start ripping tracks on a drive.

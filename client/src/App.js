@@ -25,14 +25,14 @@ class App extends Component {
         this.state = {
             driveInfo: {},
         };
-        subscribeToDriveInfo(this.handleDriveInfo);
+        subscribeToDriveInfo(this.handleDriveInfo, this);
     }
 
     handleDriveInfo(driveInfo) {
-        let driveState = Object.assign({}, this.state.driveInfo);
-        driveState[driveInfo.driveId] = driveInfo;
+        console.log('Got Drive Info');
+        console.debug(driveInfo);
         this.setState({
-            driveInfo: driveState,
+            driveInfo: driveInfo,
         });
     }
 
@@ -41,15 +41,15 @@ class App extends Component {
             <Container className="App" fluid>
                 <Header />
                 <Row>
-                {
-                    Object.keys(this.state.driveInfo).map((driveId) =>
-                        <Col md="6" xs="12">
+                    {Object.keys(this.state.driveInfo).map((driveId) => {
+                        let driveInfo = this.state.driveInfo[driveId];
+                        return <Col md="6" xs="12">
                             <DiscPanel driveId={driveId}
-                                       discTitle={this.state.driveInfo[driveId].discTitle}
-                                       />
+                                       discName={driveInfo.discName}
+                                       driveState={driveInfo.driveState}
+                            />
                         </Col>
-                    )
-                }
+                    })}
                 </Row>
             </Container>
         );

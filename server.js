@@ -36,12 +36,16 @@ const MIME_TYPES = constants.MIME_TYPES;
 class Subscribable {
 
     constructor(eventName, initialData) {
+        if (eventName === undefined) {
+            throw "A Subscribable object must have an eventName.";
+        }
         this.name = eventName;
         this.data = initialData ? initialData : {};
         this.clients = new Set();
     }
 
     subscribe(socketClient) {
+        console.debug(`Subscribing client to ${this.name}`);
         this.clients.add(socketClient);
         socketClient.on('disconnect', () => this.disconnect(socketClient));
         this.emitData(socketClient);
@@ -52,6 +56,8 @@ class Subscribable {
     }
 
     broadcastData() {
+        console.debug(`Broadcasting to ${this.clients.size} clients.`);
+        console.debug(this.data);
         this.clients.forEach((client) => this.emitData(client));
     }
 
@@ -78,7 +84,7 @@ class Subscribable {
             dataObject = dataObject[currentKey];
             return this.update(futureKey, value, skipBroadcast, dataObject);
         }
-        this.dataObject[key] = value;
+        dataObject[key] = value;
         if (!skipBroadcast) {
             this.broadcastData();
         }
@@ -92,8 +98,8 @@ class MakeMkvServer {
     constructor(port) {
 
         this.clients = new Set();
-        this.discInfo = new Subscribable();
-        this.driveInfo = new Subscribable();
+        this.discInfo = new Subscribable('DiscInfo');
+        this.driveInfo = new Subscribable('DriveInfo');
         this.makeMkv = new MakeMkv();
 
         if (udev) {
@@ -190,29 +196,31 @@ class MakeMkvServer {
 
         // Subscriptions
         client.on(
-            'subscribeToDiscInfo', () => this.discInfo.subscribe(client)
+            'subscribeToDiscInfo', () => { this.discInfo.subscribe(client) }
         );
         client.on(
-            'subscribeToDriveInfo', () => this.driveInfo.subscribe(client)
+            'subscribeToDriveInfo', () => { this.driveInfo.subscribe(client) }
         );
 
         // Actions
-        client.on('doDiscInfo', (data) => this.doDiscInfo(data));
-        client.on('doRipTrack', (data) => this.doRipTrack(data));
+        client.on('doDiscInfo', (data) => { this.doDiscInfo(data) });
+        client.on('doRipTrack', (data) => { this.doRipTrack(data) });
 
     }
 
     initDevices() {
         this.makeMkv.scanDiscs(
-            (driveInfo) => this.driveInfo.updateBulk(driveInfo)
+            (driveInfo) => {
+                this.driveInfo.updateBulk(driveInfo);
+            }
         );
     }
 
     doDiscInfo(data) {
         let driveId = data.driveId;
         let callback = (stdErr, discInfo) => {
-            this.discInfo[driveId] = {};
-            this.discInfo.updateBulk(discInfo, this.discInfo[driveId]);
+            this.discInfo.update(driveId, {}, true);
+            this.discInfo.updateBulk(discInfo, this.discInfo.data[driveId]);
         };
         this.makeMkv.getDiscInfo(driveId, callback);
     }

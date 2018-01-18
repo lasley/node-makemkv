@@ -4,6 +4,8 @@
     "SERVER_PORT": "1137",
     "MAKEMKVCON_PATH": "/usr/bin/makemkvcon",
     "OUTLIER_MODIFIER": "0.7",
+    "CACHE_SIZE": "1024",
+    "DEBUG_MODE": false,
     "SELECTION_PROFILE": [
         "-sel:all",
         "+sel:audio&(eng)",
@@ -16,5 +18,10 @@
     "PERMISSIONS": {
         "file": "0666",
         "directory": "0777"
+    },
+    "SSL": {
+        "ENABLED": false,
+        "KEY": "/path/to/ssl/key.pem",
+        "CERT": "/path/to/ssl/cert.pem"
     }
 }

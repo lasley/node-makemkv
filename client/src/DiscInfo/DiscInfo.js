@@ -4,9 +4,6 @@ import $ from 'jquery';
 
 import {
     Button,
-    Card,
-    CardBody,
-    CardTitle,
     Form,
     FormGroup,
     Input,
@@ -23,9 +20,14 @@ class DiscInfo extends Component {
 
     constructor(props) {
         super(props);
+        let selectedTracks = {};
+        this.props.tracks && this.props.tracks.map((trackInfo, trackId) => {
+            selectedTracks[trackId] = trackInfo.isAutoSelected;
+        });
         this.state = {
             checkAll: false,
-            discName: this.props.discTitle,
+            discName: false,
+            selectedTracks: selectedTracks,
         };
     }
 
@@ -38,9 +40,21 @@ class DiscInfo extends Component {
     // Toggle the checkbox on all tracks.
     toggleAllTracks(event) {
         let $target = $(event.target);
-        this.state.checkAll = $target.prop('checked');
+        this.setState({
+            checkAll: $target.prop('checked'),
+        });
         this.getTrackCheckboxes(event.target)
             .prop('checked', this.state.checkAll);
+    }
+
+    toggleTrack(trackId) {
+        let changeObj = {};
+        changeObj[trackId] = !this.selectedTracks[trackId];
+        this.setState({
+            selectedTracks: Object.assign(
+                this.selectedTracks, changeObj
+            )
+        })
     }
 
     // Command the server to rip certain tracks for this disc.
@@ -56,15 +70,20 @@ class DiscInfo extends Component {
     }
 
     render(){
-        return(
-            <Form onSubmit={ this.handleSubmit }>
-                <fieldset { ...(this.props.isRipping ? 'disabled' : '') } >
+        return (<div>
+            <h1 className={ this.props.name ? 'invisible' : '' }>
+                Drive is {this.props.driveState}
+            </h1>
+            <Form onSubmit={ this.handleSubmit }
+                  className={ !this.props.name ? 'invisible' : '' }
+                  >
+                <fieldset { ...(this.props.isRipping ? {disabled: 'disabled'} : {}) } >
                     <FormGroup>
                         <Label for="discName">
                             Name
                         </Label>
                         <Input type="text"
-                               value={ this.state.discName }
+                               value={ this.state.discName || this.props.name }
                                onChange={
                                    (event) => {
                                        this.setState({discName: event.target.value})
@@ -78,8 +97,8 @@ class DiscInfo extends Component {
                                 <tr>
                                     <th>
                                         <Input type="checkbox"
-                                               checked={this.state.checkAll}
-                                               onChange={this.toggleAllTracks} />
+                                               { ...(this.state.checkAll ? {checked: 'checked'}: {}) }
+                                               onChange={ (e) => this.toggleAllTracks(e) } />
                                     </th>
                                     <th>#</th>
                                     <th>Source</th>
@@ -90,49 +109,46 @@ class DiscInfo extends Component {
                                 </tr>
                             </thead>
                             <tbody>
-                            {
-                                this.props.tracks.map(function(trackInfo) {
-                                    return <tr>
-                                        <td>
-                                            <Input type="checkbox"
-                                                   name="selectTrack"
-                                                   data-track-id={ trackInfo.id }
-                                                   { ...(trackInfo.isAutoSelected ? 'checked' : '') }
-                                                />
-                                        </td>
-                                        <td>{ trackInfo.orderWeight }</td>
-                                        <td>{ trackInfo.name }</td>
-                                        <td>{ trackInfo.chapterCount }</td>
-                                        <td>{ trackInfo.diskSize }</td>
-                                        <td>{ trackInfo.streams.metadata }</td>
-                                        <td>{ trackInfo.segments.map }</td>
-                                    </tr>;
-                                })
-                            }
+                            {this.props.tracks && this.props.tracks.map(function(trackInfo, trackId) {
+                                return <tr onClick={ (e) => this.toggleTrack(trackId) }>
+                                    <td>
+                                        <Input type="checkbox"
+                                               name="selectTrack"
+                                               checked={ this.state.selectedTracks[trackId] }
+                                               onChange={ (e) => this.toggleTrack(trackId) }
+                                            />s
+                                    </td>
+                                    <td>{ trackInfo.orderWeight }</td>
+                                    <td>{ trackInfo.name }</td>
+                                    <td>{ trackInfo.chapterCount }</td>
+                                    <td>{ trackInfo.diskSize }</td>
+                                    <td>{ trackInfo.streams.length }</td>
+                                    <td>{ trackInfo.segmentsMap }</td>
+                                </tr>;
+                            })}
                             </tbody>
                         </Table>
                     </FormGroup>
                     <FormGroup>
-                        <Button onClick={this.ripTracks} />
+                        <Button onClick={ (e) => this.ripTracks(e) } />
                     </FormGroup>
                 </fieldset>
             </Form>
-        );
+        </div>);
     }
 }
 
 DiscInfo.propTypes = {
+    driveState: PropTypes.string.isRequired,
     isRipping: PropTypes.bool,
-    metadata: PropTypes.shape({
-        lngCode: PropTypes.string.isRequired,
-        lngName: PropTypes.string.isRequired,
-    }),
+    metadataLngCode: PropTypes.string.isRequired,
+    metadataLngName: PropTypes.string.isRequired,
     name: PropTypes.string.isRequired,
     orderWeight: PropTypes.number.isRequired,
+    panelTitle: PropTypes.string,
     sanitized: PropTypes.string,
     treeInfo: PropTypes.string.isRequired,
-    driveId: PropTypes.string.isRequired,
-    discType: PropTypes.string.isRequired,
+    type: PropTypes.string.isRequired,
     volumeName: PropTypes.string.isRequired,
     tracks: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.number.isRequired,
@@ -142,33 +158,24 @@ DiscInfo.propTypes = {
         diskSize: PropTypes.string.isRequired,
         diskSizeBytes: PropTypes.number.isRequired,
         duration: PropTypes.string.isRequired,
-        metadata: PropTypes.shape({
-            lngCode: PropTypes.string.isRequired,
-            lngName: PropTypes.string.isRequired,
-        }),
+        metadataLngCode: PropTypes.string.isRequired,
+        metadataLngName: PropTypes.string.isRequired,
         name: PropTypes.string.isRequired,
         orderWeight: PropTypes.number.isRequired,
-        outputFileName: PropTypes.string.isRequired,
-        segments: PropTypes.shape({
-            count: PropTypes.number.isRequired,
-            map: PropTypes.string.isRequired,
-        }),
+        outputFilename: PropTypes.string.isRequired,
+        panelTitle: PropTypes.string,
+        segmentsCount: PropTypes.number.isRequired,
+        segmentsMap: PropTypes.string.isRequired,
         sourceFileName: PropTypes.string.isRequired,
         treeInfo: PropTypes.string.isRequired,
-        streams: PropTypes.shape({
-            metadata: PropTypes.shape({
-                audio: PropTypes.number.isRequired,
-                subtitle: PropTypes.number.isRequired,
-                video: PropTypes.number.isRequired,
-            }),
-            details: PropTypes.any,
-        })
+        streams: PropTypes.arrayOf(
+            PropTypes.objectOf(PropTypes.string)
+        ),
     })),
 };
 
 DiscInfo.defaultProps = {
     isRipping: false,
-    tracks: [],
 };
 
 export default DiscInfo;
