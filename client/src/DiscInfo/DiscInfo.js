@@ -25,7 +25,7 @@ class DiscInfo extends Component {
             discName: false,
             selectedTracks: this.props.tracks.map((trackInfo) => {
                 return trackInfo;
-            })
+            }) | []
         };
     }
 
