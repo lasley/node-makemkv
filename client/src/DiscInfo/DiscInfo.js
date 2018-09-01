@@ -36,8 +36,8 @@ class DiscInfo extends Component {
     }
 
     toggleTrack(event) {
+        let trackId = event.target.name;
         let changeObj = {};
-        let trackId = event.target.id;
         changeObj[trackId] = !this.selectedTracks[trackId];
         this.setState({
             selectedTracks: Object.assign(
