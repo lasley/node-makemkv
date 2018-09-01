@@ -102,9 +102,8 @@ class DiscInfo extends Component {
                                     <td>
                                         <Input type="checkbox"
                                                name="selectTrack"
-                                               class={trackId}
                                                checked={this.state.selectedTracks[trackId]}
-                                               onChange={(event) => this.toggleTrack(event.target.className)}
+                                               onChange={(event) => this.toggleTrack(event)}
                                             />
                                     </td>
                                     <td>{ trackInfo.orderWeight }</td>
