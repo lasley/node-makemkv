@@ -37,7 +37,7 @@ class DiscInfo extends Component {
 
     toggleTrack(event) {
         let changeObj = {};
-        let trackId = 1;
+        let trackId = event.target.id;
         changeObj[trackId] = !this.selectedTracks[trackId];
         this.setState({
             selectedTracks: Object.assign(
@@ -102,7 +102,7 @@ class DiscInfo extends Component {
                                 return <tr>
                                     <td>
                                         <Input type="checkbox"
-                                               name="selectTrack"
+                                               name={trackId}
                                                checked={this.state.selectedTracks[trackId]}
                                                onChange={(event) => this.toggleTrack(event)}
                                             />
