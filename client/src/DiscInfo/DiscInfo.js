@@ -109,7 +109,7 @@ class DiscInfo extends Component {
                                 </tr>
                             </thead>
                             <tbody>
-                            {this.props.tracks && this.props.tracks.map(function(trackInfo, trackId) {
+                            {this.props.tracks && this.props.tracks.map((trackInfo, trackId) => {
                                 return <tr onClick={ (e) => this.toggleTrack(trackId) }>
                                     <td>
                                         <Input type="checkbox"
