@@ -1,11 +1,9 @@
 import React, {Component} from 'react';
 import PropTypes from 'prop-types';
-import $ from 'jquery';
 
 import {Button, Form, FormGroup, Input, Label, Table,} from 'reactstrap';
 
 import {actionRipTracks,} from '../api.js'
-
 
 class DiscInfo extends Component {
     constructor(props) {
@@ -14,43 +12,39 @@ class DiscInfo extends Component {
             checkAll: false,
             discName: false,
             selectedTracks: this.props.tracks.map((trackInfo) => {
-                return trackInfo;
+                const modifiedTrackInfo = {
+                    ...trackInfo,
+                    isSelected: true
+                };
+                return modifiedTrackInfo;
             })
         };
     }
 
-    getTrackCheckboxes($formElement) {
-        return $formElement
-            .closest('fieldset')
-            .find('input[name=selectTrack]');
-    }
-
     // Toggle the checkbox on all tracks.
     toggleAllTracks(event) {
-        let $target = $(event.target);
-        this.setState({
-            checkAll: $target.prop('checked'),
-        });
-        this.getTrackCheckboxes(event.target)
-            .prop('checked', this.state.checkAll);
+        alert('This functionality is currently disabled.');
+        // let $target = $(event.target);
+        // this.setState({
+        //     checkAll: $target.prop('checked'),
+        // });
+        // this.getTrackCheckboxes(event.target)
+        //     .prop('checked', this.state.checkAll);
     }
 
     toggleTrack(event) {
         let trackId = event.target.name;
-        let changeObj = {};
-        changeObj[trackId] = !this.selectedTracks[trackId];
-        this.setState({
-            selectedTracks: Object.assign(
-                this.selectedTracks, changeObj
-            )
-        })
+        this.state.selectedTracks[trackId].isSelected = !this.state.selectedTracks[trackId].isSelected;
     }
 
     // Command the server to rip certain tracks for this disc.
     ripTracks(event) {
-        let ripTrackIds = this.getTrackCheckboxes(event.target)
-            .find(':checked')
-            .data('track-id');
+        let ripTrackIds = [];
+        this.state.selectedTracks.forEach((selectedTrack) => {
+            if (selectedTrack.isSelected) {
+                ripTrackIds.push(selectedTrack.id);
+            }
+        });
         actionRipTracks(
             this.state.discName,
             this.props.driveId,
@@ -143,7 +137,7 @@ DiscInfo.propTypes = {
     volumeName: PropTypes.string.isRequired,
     tracks: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.number.isRequired,
-        isAutoSelected: PropTypes.bool,
+        isSelected: PropTypes.bool,
         ripStatus: PropTypes.oneOf(['none', 'busy', 'fail', 'success']),
         chapterCount: PropTypes.number.isRequired,
         diskSize: PropTypes.string.isRequired,
