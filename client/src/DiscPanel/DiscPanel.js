@@ -21,9 +21,7 @@ class DiscPanel extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            discInfo: {
-                tracks: []
-            },
+            discInfo: {}
         };
         subscribeToDiscInfo(this.handleDiscInfo, this, this.props.driveId);
     }
@@ -42,7 +40,7 @@ class DiscPanel extends Component {
 
     render(){
         let discInfo = '';
-        if (this.state.discInfo.tracks.length > 0) {
+        if (this.state.discInfo.tracks && this.state.discInfo.tracks.length > 0) {
             discInfo = <DiscInfo
                 driveState={this.props.driveState}
                 {...this.state.discInfo}
