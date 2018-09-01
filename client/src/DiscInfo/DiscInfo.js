@@ -12,11 +12,7 @@ class DiscInfo extends Component {
             checkAll: false,
             discName: false,
             selectedTracks: this.props.tracks.map((trackInfo) => {
-                const modifiedTrackInfo = {
-                    ...trackInfo,
-                    isSelected: true
-                };
-                return modifiedTrackInfo;
+                return trackInfo;
             })
         };
     }
