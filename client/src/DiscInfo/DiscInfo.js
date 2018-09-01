@@ -2,34 +2,21 @@ import React, {Component} from 'react';
 import PropTypes from 'prop-types';
 import $ from 'jquery';
 
-import {
-    Button,
-    Form,
-    FormGroup,
-    Input,
-    Label,
-    Table,
-} from 'reactstrap';
+import {Button, Form, FormGroup, Input, Label, Table,} from 'reactstrap';
 
-import {
-    actionRipTracks,
-} from '../api.js'
+import {actionRipTracks,} from '../api.js'
 
 
 class DiscInfo extends Component {
 
     constructor(props) {
         super(props);
-        let selectedTracks = [];
-        if (this.props.tracks) {
-            selectedTracks = this.props.tracks.map((trackInfo) => {
-                return trackInfo;
-            });
-        }
         this.state = {
             checkAll: false,
             discName: false,
-            selectedTracks: selectedTracks
+            selectedTracks: this.props.tracks.map((trackInfo) => {
+                return trackInfo;
+            })
         };
     }
 
