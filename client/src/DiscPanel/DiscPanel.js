@@ -60,7 +60,7 @@ class DiscPanel extends Component {
                             </span>
                         </CardTitle>
                         <Button onClick={() => this.refreshDiscInfo()}>
-                            <span className="glyphicon glyphicon-refresh"/>
+                            Refresh Disc
                         </Button>
                     </CardBody>
                     <CardBody>

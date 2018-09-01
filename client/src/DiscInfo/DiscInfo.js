@@ -8,7 +8,6 @@ import {actionRipTracks,} from '../api.js'
 
 
 class DiscInfo extends Component {
-
     constructor(props) {
         super(props);
         this.state = {
@@ -99,13 +98,14 @@ class DiscInfo extends Component {
                             </thead>
                             <tbody>
                             {this.props.tracks && this.props.tracks.map((trackInfo, trackId) => {
-                                return <tr onClick={ (e) => this.toggleTrack(trackId) }>
+                                return <tr>
                                     <td>
                                         <Input type="checkbox"
                                                name="selectTrack"
-                                               checked={ this.state.selectedTracks[trackId] }
-                                               onChange={ (e) => this.toggleTrack(trackId) }
-                                            />s
+                                               class={trackId}
+                                               checked={this.state.selectedTracks[trackId]}
+                                               onChange={(event) => this.toggleTrack(event)}
+                                            />
                                     </td>
                                     <td>{ trackInfo.orderWeight }</td>
                                     <td>{ trackInfo.name }</td>
@@ -119,7 +119,9 @@ class DiscInfo extends Component {
                         </Table>
                     </FormGroup>
                     <FormGroup>
-                        <Button onClick={ (e) => this.ripTracks(e) } />
+                        <Button onClick={ (e) => this.ripTracks(e) } >
+                            Rip Tracks
+                        </Button>
                     </FormGroup>
                 </fieldset>
             </Form>
