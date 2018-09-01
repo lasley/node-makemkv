@@ -35,8 +35,9 @@ class DiscInfo extends Component {
             .prop('checked', this.state.checkAll);
     }
 
-    toggleTrack(trackId) {
+    toggleTrack(event) {
         let changeObj = {};
+        let trackId = 1;
         changeObj[trackId] = !this.selectedTracks[trackId];
         this.setState({
             selectedTracks: Object.assign(
