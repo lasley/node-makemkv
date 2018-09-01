@@ -35,16 +35,14 @@ class DiscInfo extends Component {
 
     // Command the server to rip certain tracks for this disc.
     ripTracks(event) {
-        let ripTrackIds = [];
-        this.state.selectedTracks.forEach((selectedTrack) => {
-            if (selectedTrack.isSelected) {
-                ripTrackIds.push(selectedTrack.id);
-            }
-        });
         actionRipTracks(
             this.state.discName,
             this.props.driveId,
-            ripTrackIds
+            this.state.selectedTracks.map((selectedTrack, trackId) => {
+                if (selectedTrack.isSelected) {
+                    return trackId;
+                }
+            })
         );
     }
 
