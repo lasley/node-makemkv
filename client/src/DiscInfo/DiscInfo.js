@@ -20,14 +20,12 @@ class DiscInfo extends Component {
 
     constructor(props) {
         super(props);
-        let selectedTracks = {};
-        this.props.tracks && this.props.tracks.map((trackInfo, trackId) => {
-            selectedTracks[trackId] = trackInfo.isAutoSelected;
-        });
         this.state = {
             checkAll: false,
             discName: false,
-            selectedTracks: selectedTracks,
+            selectedTracks: this.props.tracks.map((trackInfo) => {
+                return trackInfo;
+            })
         };
     }
 
