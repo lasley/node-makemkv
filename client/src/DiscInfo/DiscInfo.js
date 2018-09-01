@@ -30,7 +30,7 @@ class DiscInfo extends Component {
 
     toggleTrack(event) {
         let trackId = event.target.name;
-        this.state.selectedTracks[trackId].isSelected = !this.state.selectedTracks[trackId].isSelected;
+        this.state.selectedTracks[trackId].isSelected = event.target.checked;
     }
 
     // Command the server to rip certain tracks for this disc.
