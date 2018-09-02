@@ -43,6 +43,7 @@ class DiscPanel extends Component {
         if (this.state.discInfo.tracks && this.state.discInfo.tracks.length > 0) {
             discInfo = <DiscInfo
                 driveState={this.props.driveState}
+                driveId={this.props.driveId}
                 {...this.state.discInfo}
             />;
         }
