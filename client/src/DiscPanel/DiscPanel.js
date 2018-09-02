@@ -44,6 +44,7 @@ class DiscPanel extends Component {
             discInfo = <DiscInfo
                 driveState={this.props.driveState}
                 driveId={this.props.driveId}
+                discName={this.props.discName}
                 {...this.state.discInfo}
             />;
         }

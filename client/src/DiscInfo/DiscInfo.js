@@ -42,7 +42,7 @@ class DiscInfo extends Component {
             }
         });
         actionRipTracks(
-            this.state.discName,
+            this.props.discName,
             this.props.driveId,
             trackIds
         );
