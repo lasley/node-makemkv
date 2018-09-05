@@ -204,7 +204,7 @@ class MakeMkvServer {
 
         // Actions
         client.on('doDiscInfo', (data) => { this.doDiscInfo(data) });
-        client.on('doRipTrack', (data) => { this.doRipTrack(data) });
+        client.on('doRipTracks', (data) => { this.doRipTracks(data) });
 
     }
 
@@ -225,7 +225,7 @@ class MakeMkvServer {
         this.makeMkv.getDiscInfo(driveId, callback);
     }
 
-    doRipTrack(data) {
+    doRipTracks(data) {
 
         let driveId = data.driveId,
             discName = data.discName,
