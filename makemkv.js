@@ -213,7 +213,7 @@ class MakeMkv {
             trackIds.map((trackId) => this.ripQueue.driveId.add(trackId));
         }
 
-        if (!this.ripQueue.driveId.length) {
+        if (!this.ripQueue.driveId.size) {
             // @TODO: What to do here?
             return;
         }
@@ -224,7 +224,7 @@ class MakeMkv {
         };
 
         this.ripTrack(
-            saveDirectory, driveId, this.ripQueue.driveId.pop(), newCallback
+            saveDirectory, driveId, Array.from(this.ripQueue.driveId).pop(), newCallback
         );
 
     }

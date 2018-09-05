@@ -21,7 +21,7 @@ class DiscPanel extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            discInfo: {},
+            discInfo: {}
         };
         subscribeToDiscInfo(this.handleDiscInfo, this, this.props.driveId);
     }
@@ -39,27 +39,34 @@ class DiscPanel extends Component {
     }
 
     render(){
+        let discInfo = '';
+        if (this.state.discInfo.tracks && this.state.discInfo.tracks.length > 0) {
+            discInfo = <DiscInfo
+                driveState={this.props.driveState}
+                driveId={this.props.driveId}
+                discName={this.props.discName}
+                {...this.state.discInfo}
+            />;
+        }
         return(
             <div className="DiscPanel">
                 <Card>
                     <CardBody>
                         <CardTitle>
                             <span>
-                                { this.props.driveId }
+                                {this.props.driveId}
                             </span>
                             &nbsp;-&nbsp;
                             <span>
-                                { this.props.discName || 'No Disc' }
+                                {this.props.discName || 'No Disc'}
                             </span>
                         </CardTitle>
-                        <Button onClick={ () => this.refreshDiscInfo() }>
-                            <span className="glyphicon glyphicon-refresh" />
+                        <Button onClick={() => this.refreshDiscInfo()}>
+                            Refresh Disc
                         </Button>
                     </CardBody>
                     <CardBody>
-                        <DiscInfo driveState={ this.props.driveState }
-                                  { ...this.state.discInfo }
-                                  />
+                        {discInfo}
                     </CardBody>
                 </Card>
             </div>
